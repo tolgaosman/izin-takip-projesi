@@ -15,11 +15,6 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "İzin Takip Sistemi",
   description: "İzin Takip Sistemi",
-  icons: {
-    icon: "/izin-takip-projesi/assets/browserLogo.png",
-    shortcut: "/izin-takip-projesi/assets/browserLogo.png",
-    apple: "/izin-takip-projesi/assets/browserLogo.png",
-  },
 };
 
 export default function RootLayout({
