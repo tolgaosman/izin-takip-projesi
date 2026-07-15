@@ -1,42 +1,45 @@
 "use client";
-
-import { Plus } from "lucide-react";
 import { useState } from "react";
+import { Plus } from "lucide-react";
+import { usePersonnel } from "@/lib/data/store";
+import { Personnel } from "@/lib/data/types";
 
 export default function PersonnelPage() {
+  const personnel = usePersonnel();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<Personnel | null>(null);
 
-  function openCreate() {
-    setDialogOpen(true);
-  }
 
   return (
-    <>
+    <div className="space-y-8">
       {/* Sayfa Başlığı ve Ekleme Butonu */}
-      <div className="mb-12 flex flex-wrap items-end justify-between gap-4 border-b border-outline-variant/20 pb-8">
+      <div className="flex flex-wrap items-end justify-between gap-4 border-b border-outline-variant/20 pb-6">
         <div>
-          <h2 className="mb-2 font-serif text-5xl font-bold tracking-tight text-primary md:text-6xl">
+          <h2 className="font-serif text-5xl font-bold text-primary">
             Personel Listesi
           </h2>
-          <p className="max-w-2xl font-sans text-lg text-on-surface-variant">
+          <p className="font-sans text-base text-on-surface-variant mt-2">
             Tüm şirket personelinin detayları, departmanları ve güncel çalışma durumları.
           </p>
         </div>
         <button
-          onClick={openCreate}
-          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-sans text-base font-bold text-white shadow-md transition-all hover:opacity-90 active:scale-95 cursor-pointer"
+          onClick={() => {
+            setEditing(null);
+            setDialogOpen(true);
+          }}
+          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-base font-bold text-white shadow transition-all hover:opacity-90 active:scale-95 cursor-pointer"
         >
           <Plus className="size-5" />
-          Yeni Personel
+          <span>Yeni Personel</span>
         </button>
       </div>
 
-      {/* Adım 2: Tablo buraya gelecek */}
-      <div className="flex min-h-[300px] items-center justify-center border border-dashed border-outline-variant/30 rounded-xl">
+      {/* TODO 5: Personel verilerini listelemek için el çizimi kağıt stili bir tablo oluştur. */}
+      <div className="flex min-h-[200px] items-center justify-center border border-dashed border-outline-variant/30 rounded-xl bg-white/40">
         <p className="font-mono text-sm text-on-surface-variant/70">
-          [ 2. ADIM: Personel Listesi Tablosu Yüklenecek ]
+          [ Tablo boş, sağ üstteki buton yardımıyla yeni personel ekleyiniz. ]
         </p>
       </div>
-    </>
+    </div>
   );
 }
