@@ -2,7 +2,7 @@
 
 import { Menu } from "@base-ui/react/menu";
 import { LogIn, LogOut, SlidersHorizontal, User, UserPlus } from "lucide-react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth/auth-provider";
 import { Avatar } from "@/components/dashboard/avatar";
@@ -15,6 +15,7 @@ const itemClasses =
 
 export function UserMenu() {
   const { user, logout } = useAuth();
+  const router = useRouter();
 
   return (
     <Menu.Root>
@@ -65,20 +66,20 @@ export function UserMenu() {
               </>
             ) : (
               <div className="py-1">
-                <Menu.LinkItem
-                  render={<Link href="/login" />}
+                <Menu.Item
+                  onClick={() => router.push("/login")}
                   className={itemClasses}
                 >
                   <LogIn className="size-4" />
                   Giriş Yap
-                </Menu.LinkItem>
-                <Menu.LinkItem
-                  render={<Link href="/signup" />}
+                </Menu.Item>
+                <Menu.Item
+                  onClick={() => router.push("/signup")}
                   className={itemClasses}
                 >
                   <UserPlus className="size-4" />
                   Kayıt Ol
-                </Menu.LinkItem>
+                </Menu.Item>
               </div>
             )}
           </Menu.Popup>
