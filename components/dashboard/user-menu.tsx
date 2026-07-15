@@ -7,6 +7,9 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/auth-provider";
 import { Avatar } from "@/components/dashboard/avatar";
 
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+
 const popupClasses =
   "glass-panel z-50 rounded-xl p-2 shadow-2xl outline-none transition-all data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0";
 
@@ -17,19 +20,36 @@ export function UserMenu() {
   const { user, logout } = useAuth();
   const router = useRouter();
 
+  if (!user) {
+    return (
+      <div className="flex items-center gap-3">
+        <Button
+          variant="outline"
+          size="sm"
+          className="rounded-full border-white/20 text-on-surface hover:bg-white/10"
+          render={<Link href="/login" />}
+        >
+          Giriş Yap
+        </Button>
+        <Button
+          variant="default"
+          size="sm"
+          className="rounded-full bg-accent-cyan font-bold text-[#003739] hover:bg-accent-cyan/90"
+          render={<Link href="/signup" />}
+        >
+          Hesap Oluştur
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <Menu.Root>
       <Menu.Trigger
         aria-label="User menu"
         className="rounded-full outline-none transition-transform active:scale-95 data-[popup-open]:ring-2 data-[popup-open]:ring-accent-cyan/50"
       >
-        {user ? (
-          <Avatar name={user.name} className="size-10 border border-accent-cyan/30" />
-        ) : (
-          <span className="flex size-10 items-center justify-center rounded-full border border-accent-cyan/30 bg-surface-2 text-on-surface-variant">
-            <User className="size-5" />
-          </span>
-        )}
+        <Avatar name={user.name} className="size-10 border border-accent-cyan/30" />
       </Menu.Trigger>
 
       <Menu.Portal>
