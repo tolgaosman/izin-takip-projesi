@@ -5,34 +5,22 @@ import { Popover } from "@base-ui/react/popover";
 import { Bell, LogOut, Settings, SlidersHorizontal, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useMemo } from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
 import { UserMenu } from "@/components/dashboard/user-menu";
-import { usePersonnel, useLeaveRequests } from "@/lib/data/store";
-import { leaveTypeLabels } from "@/lib/data/types";
 import { cn } from "@/lib/utils";
 
-const navLinks = [
-  { href: "/", label: "Genel Bakış" },
-  { href: "/personnel", label: "Personel Listesi" },
-  { href: "/leave-requests", label: "İzin Talepleri" },
+type Notification = {
+  id: number;
+  title: string;
+  time: string;
+};
+
+const notifications: Notification[] = [
+  { id: 1, title: "Ayşe Yılmaz yıllık izin talep etti", time: "2 saat önce" },
+  { id: 2, title: "Sistem 3 talebi onayladı", time: "4 saat önce" },
+  { id: 3, title: "Mehmet Demir izinden döndü", time: "Dün" },
 ];
-
-function isActive(pathname: string, href: string) {
-  return href === "/" ? pathname === "/" : pathname.startsWith(href);
-}
-
-function relativeTime(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  if (Number.isNaN(diff)) return "";
-  const mins = Math.floor(diff / 60000);
-  if (mins < 60) return `${Math.max(mins, 1)} dk önce`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours} saat önce`;
-  const days = Math.floor(hours / 24);
-  return days === 1 ? "Dün" : `${days} gün önce`;
-}
 
 const iconButtonClasses =
   "flex size-10 items-center justify-center rounded-full text-on-surface-variant transition-colors hover:bg-black/5 hover:text-primary data-[popup-open]:bg-black/5 data-[popup-open]:text-primary";
@@ -44,50 +32,72 @@ export function TopNav() {
   const pathname = usePathname();
   const router = useRouter();
   const { logout } = useAuth();
-  const requests = useLeaveRequests();
-  const personnel = usePersonnel();
-
-  // Notifications = pending leave requests, most recent first.
-  const notifications = useMemo(() => {
-    const nameById = new Map(personnel.map((p) => [p.id, p.name]));
-    return requests
-      .filter((r) => r.status === "pending")
-      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
-      .slice(0, 6)
-      .map((r) => ({
-        id: r.id,
-        title: `${nameById.get(r.personnelId) ?? "Personel"} ${leaveTypeLabels[r.type].toLowerCase()} talep etti`,
-        time: relativeTime(r.createdAt),
-      }));
-  }, [requests, personnel]);
 
   const settingsItems = [
     { label: "Profil", icon: User, onClick: () => router.push("/profile") },
-    {
-      label: "Tercihler",
-      icon: SlidersHorizontal,
-      onClick: () => router.push("/profile"),
-    },
+    { label: "Tercihler", icon: SlidersHorizontal, onClick: () => router.push("/profile") },
     { label: "Çıkış Yap", icon: LogOut, onClick: logout },
   ];
 
   return (
-    <header className="absolute left-64 right-0 top-0 z-30 hidden h-20 items-center justify-between px-10 border-b border-outline-variant/20 bg-transparent md:flex">
-      <div className="flex items-center gap-6">
-        {navLinks.map((link) => (
+    <header className="absolute left-0 right-0 top-0 z-30 hidden h-20 items-center justify-between px-6 md:px-16 mx-auto max-w-[1200px] border-b border-outline-variant/20 bg-transparent md:flex">
+      <div className="flex items-center gap-10">
+        <Link href="/" className="flex items-center gap-3 mr-4">
+          <img
+            src="/assets/browserLogo.png"
+            alt="İzin Takip Sistemi Logo"
+            className="h-8 w-8 object-contain"
+          />
+          <span className="font-serif text-lg font-bold text-primary">
+            İzin Takip
+          </span>
+        </Link>
+        <div className="flex items-center gap-6">
           <Link
-            key={link.href}
-            href={link.href}
             className={cn(
-              "pb-1 font-sans text-base transition-all",
-              isActive(pathname, link.href)
+              "font-sans text-base pb-1 transition-all",
+              pathname === "/"
                 ? "text-primary font-bold border-b-2 border-primary"
                 : "text-on-surface-variant hover:text-primary"
             )}
+            href="/"
           >
-            {link.label}
+            Genel Bakış
           </Link>
-        ))}
+          <Link
+            className={cn(
+              "font-sans text-base pb-1 transition-all",
+              pathname === "/personnel"
+                ? "text-primary font-bold border-b-2 border-primary"
+                : "text-on-surface-variant hover:text-primary"
+            )}
+            href="/personnel"
+          >
+            Personel Listesi
+          </Link>
+          <Link
+            className={cn(
+              "font-sans text-base pb-1 transition-all",
+              pathname === "/leave-requests"
+                ? "text-primary font-bold border-b-2 border-primary"
+                : "text-on-surface-variant hover:text-primary"
+            )}
+            href="/leave-requests"
+          >
+            İzin Talepleri
+          </Link>
+          <Link
+            className={cn(
+              "font-sans text-base pb-1 transition-all",
+              pathname === "/playground"
+                ? "text-primary font-bold border-b-2 border-primary"
+                : "text-on-surface-variant hover:text-primary"
+            )}
+            href="/playground"
+          >
+            Playground
+          </Link>
+        </div>
       </div>
 
       <div className="flex items-center gap-4">
@@ -124,7 +134,7 @@ export function TopNav() {
                           <p className="text-sm leading-tight text-on-surface">
                             {n.title}
                           </p>
-                          <p className="mt-0.5 font-label-mono text-xs text-on-surface-variant/70">
+                          <p className="mt-0.5 font-mono text-xs text-on-surface-variant/70">
                             {n.time}
                           </p>
                         </Link>

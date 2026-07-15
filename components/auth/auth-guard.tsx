@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
 
@@ -11,15 +11,22 @@ import { useAuth } from "@/components/auth/auth-provider";
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (!user) router.replace("/login");
-  }, [user, router]);
+    setMounted(true);
+  }, []);
 
-  if (!user) {
+  useEffect(() => {
+    if (mounted && !user) {
+      router.replace("/login");
+    }
+  }, [mounted, user, router]);
+
+  if (!mounted || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="font-label-mono text-xs uppercase tracking-wider text-on-surface-variant">
+        <p className="font-mono text-xs uppercase tracking-wider text-on-surface-variant">
           Yönlendiriliyor…
         </p>
       </div>
