@@ -5,10 +5,14 @@ import { X } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/toast";
 import {
   addLeaveRequest,
+  getLeaveBalance,
   updateLeaveRequest,
+  useActingPersonnel,
   usePersonnel,
+  useViewRole,
 } from "@/lib/data/store";
 import {
   leaveStatusLabels,
@@ -17,6 +21,7 @@ import {
   type LeaveStatus,
   type LeaveType,
 } from "@/lib/data/types";
+import { workingDayCount } from "@/lib/date/business-days";
 import { cn } from "@/lib/utils";
 
 const fieldClasses =
@@ -43,10 +48,20 @@ function LeaveForm({
   onClose: () => void;
 }) {
   const personnel = usePersonnel();
+  const viewRole = useViewRole();
+  const actingId = useActingPersonnel();
+  const toast = useToast();
   const isEdit = Boolean(leave);
+  // Çalışan modunda talep yalnız kişinin kendi adına açılır → personel kilitli.
+  const isEmployee = viewRole === "employee";
 
   const [personnelId, setPersonnelId] = useState(
-    () => leave?.personnelId ?? defaultPersonnelId ?? personnel[0]?.id ?? ""
+    () =>
+      leave?.personnelId ??
+      (isEmployee ? actingId ?? "" : "") ??
+      defaultPersonnelId ??
+      personnel[0]?.id ??
+      ""
   );
   const [type, setType] = useState<LeaveType>(leave?.type ?? "annual");
   const [status, setStatus] = useState<LeaveStatus>(leave?.status ?? "pending");
@@ -54,9 +69,29 @@ function LeaveForm({
   const [end, setEnd] = useState(leave?.endDate ?? "");
   const [note, setNote] = useState(leave?.note ?? "");
 
+  // Seçili aralığın İŞ GÜNÜ maliyeti + yıllık izinde kişinin kalan bakiyesi.
+  // (Canlı bilgi + submit kontrolü için; getLeaveBalance daima tam veriyle çalışır.)
+  const requestedDays = start && end ? workingDayCount(start, end) : 0;
+  const balance =
+    type === "annual" && personnelId ? getLeaveBalance(personnelId) : undefined;
+
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!personnelId) return;
+
+    // Bakiye kontrolü: yeni bir YILLIK talep bakiyeyi aşamaz.
+    if (!leave && type === "annual") {
+      const days = workingDayCount(start, end);
+      const bal = getLeaveBalance(personnelId);
+      if (bal && days > bal.remaining) {
+        toast.error(
+          "Yetersiz izin bakiyesi",
+          `Kalan ${bal.remaining} iş günü, bu talep ${days} iş günü. Talep kaydedilmedi.`
+        );
+        return; // form gönderimi engellenir
+      }
+    }
+
     const data = {
       personnelId,
       type,
@@ -69,6 +104,9 @@ function LeaveForm({
     } else {
       addLeaveRequest({ ...data, status });
     }
+    toast.success(
+      isEdit ? "İzin talebi güncellendi" : "İzin talebi oluşturuldu"
+    );
     onClose();
   }
 
@@ -100,8 +138,9 @@ function LeaveForm({
             id="l-personnel"
             required
             value={personnelId}
+            disabled={isEmployee}
             onChange={(e) => setPersonnelId(e.target.value)}
-            className={fieldClasses}
+            className={cn(fieldClasses, isEmployee && "cursor-not-allowed opacity-70")}
           >
             {personnel.length === 0 && <option value="">Personel yok</option>}
             {personnel.map((p) => (
@@ -159,6 +198,26 @@ function LeaveForm({
             />
           </div>
         </div>
+
+        {/* Canlı bakiye bilgisi — yalnız yıllık izinde ve tarihler seçiliyken */}
+        {type === "annual" && requestedDays > 0 && (
+          <div
+            className={cn(
+              "rounded-lg border px-3 py-2 font-label-mono text-xs",
+              balance && requestedDays > balance.remaining
+                ? "border-destructive/40 bg-destructive/5 text-destructive"
+                : "border-white/10 bg-surface-2/40 text-on-surface-variant"
+            )}
+          >
+            Bu talep: <span className="font-bold">{requestedDays} iş günü</span>
+            {balance && (
+              <>
+                {" · "}Kalan bakiye:{" "}
+                <span className="font-bold">{balance.remaining} gün</span>
+              </>
+            )}
+          </div>
+        )}
 
         {isEdit && (
           <div className="space-y-1.5">

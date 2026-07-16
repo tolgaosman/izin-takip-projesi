@@ -9,6 +9,8 @@ import type {
   LeaveRequest,
   LeaveStatus,
   Personnel,
+  PersonnelStatus,
+  UserRole,
 } from "@/lib/data/types";
 
 /* ── localStorage-backed reactive store ──────────────────────────────
@@ -18,10 +20,25 @@ import type {
 const PERSONNEL_KEY = "izin-takip-personnel";
 const LEAVES_KEY = "izin-takip-leaves";
 const ROLE_KEY = "izin-takip-role";
+const VIEW_ROLE_KEY = "izin-takip-view-role";
+const ACTING_ID_KEY = "izin-takip-acting-id";
 
 let personnel: Personnel[] = seedPersonnel;
 let leaves: LeaveRequest[] = seedLeaveRequests;
+
+export const ROLE_DEPARTMENTS: Record<string, string[]> = {
+  "Admin (Tümü)": [],
+  "Teknoloji": ["Yazılım", "Donanım", "Destek"],
+  "İnsan Kaynakları": ["İnsan Kaynakları"],
+  "Satış ve Pazarlama": ["Satış", "Pazarlama"],
+  "Muhasebe": ["Muhasebe"],
+};
+
+export const AVAILABLE_ROLES = Object.keys(ROLE_DEPARTMENTS);
+
 let activeRole = "Admin (Tümü)";
+let viewRole: UserRole = "admin";
+let actingPersonnelId: string | null = null;
 let initialized = false;
 
 const listeners = new Set<() => void>();
@@ -37,12 +54,47 @@ function readKey<T>(key: string, fallback: T): T {
   return fallback;
 }
 
+function syncPersonnelStatuses(silent = false) {
+  const todayStr = new Date().toISOString().split("T")[0];
+  let changed = false;
+
+  const nextPersonnel = personnel.map((p) => {
+    if (p.status === "resigned") return p;
+    const hasActiveLeave = leaves.some(
+      (l) =>
+        l.personnelId === p.id &&
+        l.status === "approved" &&
+        l.startDate <= todayStr &&
+        l.endDate >= todayStr
+    );
+    const targetStatus: PersonnelStatus = hasActiveLeave ? "on-leave" : "active";
+    
+    if (p.status !== targetStatus) {
+      changed = true;
+      return { ...p, status: targetStatus };
+    }
+    return p;
+  });
+
+  if (changed) {
+    personnel = nextPersonnel;
+    if (typeof clearCache === "function") clearCache();
+    try {
+      window.localStorage.setItem(PERSONNEL_KEY, JSON.stringify(personnel));
+    } catch {}
+    if (!silent) emit();
+  }
+}
+
 function ensureInit() {
   if (initialized || typeof window === "undefined") return;
   initialized = true;
   personnel = readKey(PERSONNEL_KEY, seedPersonnel);
   leaves = readKey(LEAVES_KEY, seedLeaveRequests);
   activeRole = readKey(ROLE_KEY, "Admin (Tümü)");
+  viewRole = readKey<UserRole>(VIEW_ROLE_KEY, "admin");
+  actingPersonnelId = readKey<string | null>(ACTING_ID_KEY, null);
+  syncPersonnelStatuses(true);
 }
 
 function persist(key: string, value: unknown) {
@@ -70,39 +122,54 @@ function clearCache() {
   cachedFilteredLeaves = null;
 }
 
-export const ROLE_DEPARTMENTS: Record<string, string[]> = {
-  "Admin (Tümü)": [],
-  "Teknoloji": ["Yazılım", "Donanım", "Destek"],
-  "İnsan Kaynakları": ["İnsan Kaynakları"],
-  "Satış ve Pazarlama": ["Satış", "Pazarlama"],
-  "Muhasebe": ["Muhasebe"],
-};
-
-export const AVAILABLE_ROLES = Object.keys(ROLE_DEPARTMENTS);
+/* Role-scoped snapshots. In "employee" view, everything is narrowed to the
+   acting person so the whole dashboard/tables personalise for free. Results
+   are cached so useSyncExternalStore gets a referentially-stable array
+   (a fresh .filter() every render would loop). */
 
 function getPersonnelSnapshot(): Personnel[] {
   ensureInit();
-  if (activeRole === "Admin (Tümü)") return personnel;
   
-  if (!cachedFilteredPersonnel) {
-    const allowed = ROLE_DEPARTMENTS[activeRole] || [];
-    cachedFilteredPersonnel = personnel.filter((p) => allowed.includes(p.department));
+  if (viewRole === "employee") {
+    if (!cachedFilteredPersonnel) {
+      cachedFilteredPersonnel = personnel.filter((p) => p.id === actingPersonnelId);
+    }
+    return cachedFilteredPersonnel;
   }
-  return cachedFilteredPersonnel;
+
+  if (activeRole !== "Admin (Tümü)") {
+    if (!cachedFilteredPersonnel) {
+      const allowed = ROLE_DEPARTMENTS[activeRole] || [];
+      cachedFilteredPersonnel = personnel.filter((p) => allowed.includes(p.department));
+    }
+    return cachedFilteredPersonnel;
+  }
+
+  return personnel;
 }
 
 function getLeavesSnapshot(): LeaveRequest[] {
   ensureInit();
-  if (activeRole === "Admin (Tümü)") return leaves;
-  
-  if (!cachedFilteredLeaves) {
-    const allowed = ROLE_DEPARTMENTS[activeRole] || [];
-    const allowedPersonnelIds = new Set(
-      personnel.filter((p) => allowed.includes(p.department)).map((p) => p.id)
-    );
-    cachedFilteredLeaves = leaves.filter((l) => allowedPersonnelIds.has(l.personnelId));
+
+  if (viewRole === "employee") {
+    if (!cachedFilteredLeaves) {
+      cachedFilteredLeaves = leaves.filter((l) => l.personnelId === actingPersonnelId);
+    }
+    return cachedFilteredLeaves;
   }
-  return cachedFilteredLeaves;
+
+  if (activeRole !== "Admin (Tümü)") {
+    if (!cachedFilteredLeaves) {
+      const allowed = ROLE_DEPARTMENTS[activeRole] || [];
+      const allowedPersonnelIds = new Set(
+        personnel.filter((p) => allowed.includes(p.department)).map((p) => p.id)
+      );
+      cachedFilteredLeaves = leaves.filter((l) => allowedPersonnelIds.has(l.personnelId));
+    }
+    return cachedFilteredLeaves;
+  }
+
+  return leaves;
 }
 
 // Server snapshots must be referentially stable across calls.
@@ -125,6 +192,7 @@ function setLeaves(next: LeaveRequest[]) {
   clearCache();
   persist(LEAVES_KEY, next);
   emit();
+  syncPersonnelStatuses(); // Senkronizasyon (personel status update)
 }
 
 function newId(): string {
@@ -154,10 +222,67 @@ export function setRole(role: string) {
   emit();
 }
 
+export function useViewRole(): UserRole {
+  return useSyncExternalStore(
+    subscribe,
+    () => {
+      ensureInit();
+      return viewRole;
+    },
+    () => "admin"
+  );
+}
+
+export function useActingPersonnel(): string | null {
+  return useSyncExternalStore(
+    subscribe,
+    () => {
+      ensureInit();
+      return actingPersonnelId;
+    },
+    () => null
+  );
+}
+
+export function setViewRole(role: UserRole) {
+  ensureInit();
+  viewRole = role;
+  // Switching to employee view with nobody selected → default to first person.
+  if (role === "employee" && !actingPersonnelId) {
+    actingPersonnelId = personnel[0]?.id ?? null;
+    persist(ACTING_ID_KEY, actingPersonnelId);
+  }
+  clearCache();
+  persist(VIEW_ROLE_KEY, role);
+  emit();
+}
+
+export function setActingPersonnel(id: string | null) {
+  ensureInit();
+  actingPersonnelId = id;
+  clearCache();
+  persist(ACTING_ID_KEY, id);
+  emit();
+}
+
 export function usePersonnel(): Personnel[] {
   return useSyncExternalStore(
     subscribe,
     getPersonnelSnapshot,
+    getPersonnelServerSnapshot
+  );
+}
+
+/** Tüm personel — view role'den BAĞIMSIZ (filtresiz). Rol değiştirici gibi
+    "çalışan seç" ihtiyacı olan yerler için; usePersonnel() çalışan modunda
+    tek kişiye daraldığından onun yerine bu kullanılır. */
+export function useAllPersonnel(): Personnel[] {
+  return useSyncExternalStore(
+    subscribe,
+    () => {
+      ensureInit();
+      return personnel;
+    },
     getPersonnelServerSnapshot
   );
 }

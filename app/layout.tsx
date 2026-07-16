@@ -3,6 +3,7 @@ import { Hanken_Grotesk, Literata, Space_Mono } from "next/font/google";
 import "./globals.css";
 
 import { AuthProvider } from "@/components/auth/auth-provider";
+import { AppToastProvider } from "@/components/ui/toast";
 
 const hankenGrotesk = Hanken_Grotesk({
   variable: "--font-hanken-grotesk",
@@ -46,7 +47,9 @@ export default function RootLayout({
       className={`${hankenGrotesk.variable} ${literata.variable} ${spaceMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <AppToastProvider>{children}</AppToastProvider>
+        </AuthProvider>
       </body>
     </html>
   );

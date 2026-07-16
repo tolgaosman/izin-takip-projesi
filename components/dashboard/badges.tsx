@@ -27,6 +27,7 @@ const personnelStatusStyles: Record<PersonnelStatus, string> = {
   active: "border-accent-cyan/30 bg-accent-cyan/10 text-accent-cyan",
   "on-leave": "border-accent-violet/30 bg-accent-violet/10 text-accent-violet",
   inactive: "border-white/15 bg-white/5 text-on-surface-variant",
+  resigned: "border-destructive/30 bg-destructive/5 text-destructive",
 };
 
 export function PersonnelStatusBadge({ status }: { status: PersonnelStatus }) {

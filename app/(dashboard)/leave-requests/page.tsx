@@ -6,33 +6,54 @@ import { Plus, Check, X, Trash2, CalendarClock, Search } from "lucide-react";
 import {
   useLeaveRequests,
   usePersonnel,
+  useViewRole,
   deleteLeaveRequest,
   setLeaveStatus,
 } from "@/lib/data/store";
 import {
   LeaveRequest,
+  LeaveType,
   leaveTypeLabels,
+  leaveStatusLabels,
   leaveDayCount,
 } from "@/lib/data/types";
+import { workingDayCount } from "@/lib/date/business-days";
 
 import { Avatar } from "@/components/dashboard/avatar";
 import { ConfirmDialog } from "@/components/dashboard/confirm-dialog";
 import { LeaveDialog } from "@/components/dashboard/leave-dialog";
 import { LeaveStatusBadge } from "@/components/dashboard/badges";
+import { ExportButton } from "@/components/dashboard/export-button";
 
+
+const filterSelectClasses =
+  "rounded-lg border border-outline-variant/30 bg-surface-1 px-3 py-2 font-sans text-sm text-on-surface outline-none transition-colors focus:border-accent-cyan cursor-pointer";
 
 export default function LeaveRequestsPage() {
   const requests = useLeaveRequests();
   const personnel = usePersonnel();
+  const viewRole = useViewRole();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<LeaveRequest | null>(null);
   const [toDelete, setToDelete] = useState<LeaveRequest | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  // Çoklu filtre: her alan bağımsız; "all" o kriteri baypas eder.
+  const [filters, setFilters] = useState<{
+    period: "all" | "this-month" | "last-month";
+    department: string;
+    type: "all" | LeaveType;
+  }>({ period: "all", department: "all", type: "all" });
 
   const personnelMap = useMemo(() => {
     return new Map(personnel.map((p) => [p.id, p]));
   }, [personnel]);
+
+  // Filtre açılır menüsü için benzersiz departman listesi (mevcut personelden).
+  const departments = useMemo(
+    () => Array.from(new Set(personnel.map((p) => p.department))).sort(),
+    [personnel]
+  );
 
   const sortedRequests = useMemo(() => {
     return [...requests].sort(
@@ -41,18 +62,48 @@ export default function LeaveRequestsPage() {
   }, [requests]);
 
   const filteredRequests = useMemo(() => {
+    // İçinde bulunduğumuz ve bir önceki ayın (yıl, ay) anahtarları.
+    const now = new Date();
+    const thisKey = `${now.getFullYear()}-${now.getMonth()}`;
+    const lastRef = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastKey = `${lastRef.getFullYear()}-${lastRef.getMonth()}`;
+
+    const query = searchQuery.toLowerCase().trim();
+
     return sortedRequests.filter((r) => {
       const person = personnelMap.get(r.personnelId);
       if (!person) return false;
-      const query = searchQuery.toLowerCase().trim();
-      if (!query) return true;
-      return (
-        person.name.toLowerCase().includes(query) ||
-        person.department.toLowerCase().includes(query) ||
-        leaveTypeLabels[r.type].toLowerCase().includes(query)
-      );
+
+      // 1) Serbest metin arama
+      if (query) {
+        const matches =
+          person.name.toLowerCase().includes(query) ||
+          person.department.toLowerCase().includes(query) ||
+          leaveTypeLabels[r.type].toLowerCase().includes(query);
+        if (!matches) return false;
+      }
+
+      // 2) Departman
+      if (filters.department !== "all" && person.department !== filters.department) {
+        return false;
+      }
+
+      // 3) İzin türü
+      if (filters.type !== "all" && r.type !== filters.type) {
+        return false;
+      }
+
+      // 4) Dönem (izin başlangıç tarihine göre)
+      if (filters.period !== "all") {
+        const [y, m] = r.startDate.split("-").map(Number);
+        const key = `${y}-${m - 1}`; // ay 0-index'e çevrildi
+        if (filters.period === "this-month" && key !== thisKey) return false;
+        if (filters.period === "last-month" && key !== lastKey) return false;
+      }
+
+      return true;
     });
-  }, [sortedRequests, personnelMap, searchQuery]);
+  }, [sortedRequests, personnelMap, searchQuery, filters]);
 
   return (
     <>
@@ -66,16 +117,40 @@ export default function LeaveRequestsPage() {
               Tüm personel izin talepleri, onay durumları ve izin süreleri.
             </p>
           </div>
-          <button
-            onClick={() => {
-              setEditing(null);
-              setDialogOpen(true);
-            }}
-            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-base font-bold text-white shadow transition-all hover:opacity-90 active:scale-95 cursor-pointer"
-          >
-            <Plus className="size-5" />
-            <span>Yeni İzin Talebi</span>
-          </button>
+          <div className="flex items-center gap-3">
+            <ExportButton
+              filename="izin-talepleri"
+              rows={filteredRequests}
+              columns={[
+                {
+                  header: "Personel",
+                  value: (r) => personnelMap.get(r.personnelId)?.name ?? "",
+                },
+                {
+                  header: "Departman",
+                  value: (r) => personnelMap.get(r.personnelId)?.department ?? "",
+                },
+                { header: "İzin Türü", value: (r) => leaveTypeLabels[r.type] },
+                { header: "Başlangıç", value: (r) => r.startDate },
+                { header: "Bitiş", value: (r) => r.endDate },
+                {
+                  header: "İş Günü",
+                  value: (r) => workingDayCount(r.startDate, r.endDate),
+                },
+                { header: "Durum", value: (r) => leaveStatusLabels[r.status] },
+              ]}
+            />
+            <button
+              onClick={() => {
+                setEditing(null);
+                setDialogOpen(true);
+              }}
+              className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-base font-bold text-white shadow transition-all hover:opacity-90 active:scale-95 cursor-pointer"
+            >
+              <Plus className="size-5" />
+              <span>Yeni İzin Talebi</span>
+            </button>
+          </div>
         </div>
 
         {requests.length === 0 ? (
@@ -86,16 +161,71 @@ export default function LeaveRequestsPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Arama Çubuğu */}
-            <div className="relative max-w-md">
-              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-on-surface-variant/50" />
-              <input
-                type="text"
-                placeholder="Personel adı, departman veya izin türü ara..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-lg border border-outline-variant/30 bg-surface-1 py-2 pl-9 pr-4 font-sans text-sm text-on-surface outline-none placeholder:text-on-surface-variant/50 focus:border-accent-cyan"
-              />
+            {/* Arama + Çoklu Filtreler */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="relative min-w-[240px] flex-1 md:max-w-md">
+                <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-on-surface-variant/50" />
+                <input
+                  type="text"
+                  placeholder="Personel adı, departman veya izin türü ara..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full rounded-lg border border-outline-variant/30 bg-surface-1 py-2 pl-9 pr-4 font-sans text-sm text-on-surface outline-none placeholder:text-on-surface-variant/50 focus:border-accent-cyan"
+                />
+              </div>
+
+              <select
+                aria-label="Dönem"
+                value={filters.period}
+                onChange={(e) =>
+                  setFilters((f) => ({
+                    ...f,
+                    period: e.target.value as typeof f.period,
+                  }))
+                }
+                className={filterSelectClasses}
+              >
+                <option value="all">Tüm Dönemler</option>
+                <option value="this-month">Bu Ay</option>
+                <option value="last-month">Geçen Ay</option>
+              </select>
+
+              <select
+                aria-label="Departman"
+                value={filters.department}
+                onChange={(e) =>
+                  setFilters((f) => ({ ...f, department: e.target.value }))
+                }
+                className={filterSelectClasses}
+              >
+                <option value="all">Tüm Departmanlar</option>
+                {departments.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                aria-label="İzin Türü"
+                value={filters.type}
+                onChange={(e) =>
+                  setFilters((f) => ({
+                    ...f,
+                    type: e.target.value as typeof f.type,
+                  }))
+                }
+                className={filterSelectClasses}
+              >
+                <option value="all">Tüm Türler</option>
+                {(Object.entries(leaveTypeLabels) as [LeaveType, string][]).map(
+                  ([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  )
+                )}
+              </select>
             </div>
 
             {filteredRequests.length === 0 ? (
@@ -166,7 +296,7 @@ export default function LeaveRequestsPage() {
                             {/* İşlemler (Onay/Red/Düzenle/Sil) */}
                             <td className="px-6 py-4 text-right">
                               <div className="flex items-center justify-end gap-2">
-                                {r.status === "pending" && (
+                                {viewRole === "admin" && r.status === "pending" && (
                                   <>
                                     <button
                                       onClick={() => setLeaveStatus(r.id, "approved")}

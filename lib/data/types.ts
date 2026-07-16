@@ -1,7 +1,7 @@
 /* Domain model for the leave-tracking app.
    Centralised here so pages/components share one source of truth. */
 
-export type PersonnelStatus = "active" | "on-leave" | "inactive";
+export type PersonnelStatus = "active" | "on-leave" | "inactive" | "resigned";
 
 /** RBAC simulation role. An "employee" only ever sees their own data;
     an "admin" (İK) sees everything and can approve/reject requests. */
@@ -57,6 +57,7 @@ export const personnelStatusLabels: Record<PersonnelStatus, string> = {
   active: "Aktif",
   "on-leave": "İzinde",
   inactive: "Pasif",
+  resigned: "Ayrıldı",
 };
 
 /** Whole calendar days between two ISO dates, inclusive of both ends.

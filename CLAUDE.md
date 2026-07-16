@@ -31,8 +31,8 @@ State lives in **module-level stores synced through `useSyncExternalStore`**, hy
 
 - `components/auth/auth-provider.tsx` — `AuthProvider` + `useAuth()`. localStorage key `izin-takip-auth`. `getServerSnapshot()` returns a stable value (`null`) so SSR/first-paint matches.
 - `components/auth/auth-guard.tsx` — `AuthGuard` wraps the `(dashboard)` group and client-side-redirects to `/login` when unauthenticated (there's no server to gate routes). It uses a `useSyncExternalStore` "mounted" flag rather than `useState`-in-effect to avoid hydration mismatch.
-- `lib/data/store.ts` — the personnel + leave-request store (keys `izin-takip-personnel`, `izin-takip-leaves`, `izin-takip-role`), same pattern. Exposes reactive hooks (`usePersonnel`, `useLeaveRequests`, `useDashboardStats`), non-reactive readers safe for event handlers (`getPersonnelById`, `getLeavesByPersonnel`), and mutations (`addPersonnel`, `updateLeaveRequest`, `setLeaveStatus`, …). `ensureInit()` lazily seeds from `lib/data/seed.ts` on first client read; `deletePersonnel` cascades to that person's leaves.
-- **Role-based filtering**: `ROLE_DEPARTMENTS` / `AVAILABLE_ROLES` in `store.ts` map an active role to visible departments; the snapshot getters filter personnel/leaves by it. `"Admin (Tümü)"` sees everything.
+- `lib/data/store.ts` — the personnel + leave-request store (keys `izin-takip-personnel`, `izin-takip-leaves`), same pattern. Exposes reactive hooks (`usePersonnel`, `useLeaveRequests`, `useDashboardStats`, `usePersonnelBalance`), non-reactive readers safe for event handlers (`getPersonnelById`, `getLeavesByPersonnel`, `getLeaveBalance`), and mutations (`addPersonnel`, `updateLeaveRequest`, `setLeaveStatus`, …). `ensureInit()` lazily seeds from `lib/data/seed.ts` on first client read; `deletePersonnel` cascades to that person's leaves. `syncPersonnelStatuses()` auto-derives each person's `on-leave`/`active` status from their approved leaves (a `resigned` person is left untouched).
+- **RBAC simulation** (keys `izin-takip-view-role`, `izin-takip-acting-id`): `viewRole` is `"admin"` (sees everyone, can approve/reject) or `"employee"` (scoped to `actingPersonnelId` — their own data only). The snapshot getters narrow personnel/leaves in employee view, so the whole dashboard/tables/notifications personalise for free. Hooks: `useViewRole`, `useActingPersonnel`, `setViewRole`, `setActingPersonnel`; `useAllPersonnel()` returns the **unfiltered** list (for the role/user switcher, since `usePersonnel()` is role-scoped). Switched in `components/dashboard/top-nav.tsx`; nav items marked `adminOnly` are hidden by `sidebar.tsx` and pages guard directly.
 
 ## Domain model
 
@@ -45,11 +45,16 @@ Pure, framework-free functions that encode the actual leave rules — keep them 
 - `lib/date/business-days.ts` — `workingDayCount(start, end)` counts days **excluding weekends and public holidays**; this is what actually comes out of a balance (vs `leaveDayCount`, which is raw calendar days). Always parse `yyyy-mm-dd` with `parseLocalDate` (constructs a *local* Date) — never `new Date(iso)`, which is UTC and shifts `getDay()`/`getDate()` by a day.
 - `lib/date/holidays.ts` — 2026 Turkish holidays as `publicHolidays2026` + `holidaySet2026` (O(1) lookup). National dates are fixed; **religious (Ramazan/Kurban) dates are approximate** and flagged to verify.
 - `lib/data/balance.ts` — `annualEntitlement(startDate)` derives yearly entitlement from seniority (Turkish Labour Law tiers: 14/20/26 days). `computeLeaveBalance(person, leaves)` returns a **derived, never-stored** `LeaveBalance`; only `type === "annual"` leaves deduct (sick/excuse/unpaid don't). The store wraps these as reactive `usePersonnelBalance(id)` and event-handler-safe `getLeaveBalance(id)` (the latter reads the full unfiltered data for correct remaining balance).
-- `lib/utils/csv.ts` — `toCsv(rows, columns)` (RFC-4180 escaping + UTF-8 BOM for Excel Turkish chars) and `downloadCsv(name, content)` (client-only Blob download).
+- `lib/utils/csv.ts` — `toCsv(rows, columns)` (RFC-4180 escaping + UTF-8 BOM for Excel Turkish chars) and `downloadCsv(name, content)` (client-only Blob download). Surfaced via the generic `components/dashboard/export-button.tsx`, wired into the personnel + leave-request tables; it exports the **currently visible (filtered + role-scoped)** rows.
+
+## Toasts & the balance guard
+
+- `components/ui/toast.tsx` — `AppToastProvider` (mounted in `app/layout.tsx` inside `AuthProvider`) wraps `@base-ui/react/toast`; `useToast()` returns `{ success, error, info }`. Use it for all user feedback rather than `alert`.
+- The leave form (`components/dashboard/leave-dialog.tsx`) blocks submit and fires `toast.error` when a **new `annual` request** exceeds the person's remaining balance (`getLeaveBalance` + `workingDayCount`), and shows a live "N iş günü · Kalan R gün" hint. In employee view the personnel select is locked to the acting person.
 
 ## Routing structure
 
-App Router with two route groups sharing the root layout (`app/layout.tsx`, which mounts `AuthProvider` and the Google fonts):
+App Router with two route groups sharing the root layout (`app/layout.tsx`, which mounts `AuthProvider` → `AppToastProvider` and the Google fonts):
 
 - `app/(auth)/` — `login/` under a minimal auth layout.
 - `app/(dashboard)/` — layout wraps children in `AuthGuard` + `Sidebar` + `TopNav`; pages: `/` (overview), `/personnel`, `/personnel/detail`, `/leave-requests`, `/active-leaves`, `/profile`. Nav links live in `components/dashboard/nav-items.ts`.

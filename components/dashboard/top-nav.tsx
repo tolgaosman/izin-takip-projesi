@@ -2,12 +2,20 @@
 
 import { useState, useMemo } from "react";
 import { Popover } from "@base-ui/react/popover";
-import { Bell, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { Bell, Calendar, ChevronLeft, ChevronRight, ShieldCheck, User } from "lucide-react";
 import Link from "next/link";
 
 import { useAuth } from "@/components/auth/auth-provider";
 import { UserMenu } from "@/components/dashboard/user-menu";
-import { useLeaveRequests, usePersonnel, useRole, setRole, AVAILABLE_ROLES } from "@/lib/data/store";
+import {
+  useLeaveRequests,
+  usePersonnel,
+  useAllPersonnel,
+  useViewRole,
+  useActingPersonnel,
+  setViewRole,
+  setActingPersonnel,
+} from "@/lib/data/store";
 import { leaveTypeLabels } from "@/lib/data/types";
 
 function relativeTime(iso: string): string {
@@ -34,7 +42,17 @@ export function TopNav() {
   const { user } = useAuth();
   const requests = useLeaveRequests();
   const personnel = usePersonnel();
-  const activeRole = useRole();
+  const allPersonnel = useAllPersonnel();
+  const viewRole = useViewRole();
+  const actingId = useActingPersonnel();
+
+  const actingPerson = allPersonnel.find((p) => p.id === actingId);
+  const roleLabel =
+    viewRole === "admin"
+      ? "Admin (İK)"
+      : actingPerson
+        ? `Çalışan · ${actingPerson.name}`
+        : "Çalışan";
 
   const notifications = useMemo(() => {
     // ... rest of notifications memo ...
@@ -91,36 +109,79 @@ export function TopNav() {
       </div>
 
       <div className="flex items-center gap-4">
-        {/* Role Selector */}
+        {/* Rol / Kullanıcı değiştirici (RBAC simülasyonu) */}
         <Popover.Root>
           <Popover.Trigger aria-label="Rol Seçimi" className="flex items-center gap-2 rounded-lg border border-outline-variant/30 bg-surface-1 px-3 py-1.5 font-sans text-sm font-bold text-on-surface-variant transition-colors hover:bg-black/5 hover:text-primary data-[popup-open]:bg-black/5 cursor-pointer">
-            <span>{activeRole}</span>
+            {viewRole === "admin" ? (
+              <ShieldCheck className="size-4" />
+            ) : (
+              <User className="size-4" />
+            )}
+            <span>{roleLabel}</span>
             <ChevronRight className="size-4 rotate-90" />
           </Popover.Trigger>
           <Popover.Portal>
             <Popover.Positioner sideOffset={8} align="end" className="z-50">
-              <Popover.Popup className={`${popupClasses} w-56`}>
+              <Popover.Popup className={`${popupClasses} w-64`}>
                 <div className="border-b border-outline-variant/30 px-3 py-2">
                   <Popover.Title className="text-xs font-bold uppercase tracking-wider text-on-surface-variant/70">
-                    Görünüm Yetkisi
+                    Görünüm / Yetki
                   </Popover.Title>
                 </div>
-                <ul className="py-1">
-                  {AVAILABLE_ROLES.map((role) => (
-                    <li key={role}>
-                      <button
-                        onClick={() => setRole(role)}
-                        className={`w-full text-left cursor-pointer rounded-lg px-3 py-2 text-sm transition-colors ${
-                          activeRole === role
-                            ? "bg-primary font-bold text-white shadow-sm"
-                            : "hover:bg-black/5 text-on-surface"
-                        }`}
-                      >
-                        {role}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+
+                {/* İki rol */}
+                <div className="flex gap-1 p-1">
+                  <button
+                    onClick={() => setViewRole("admin")}
+                    className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors cursor-pointer ${
+                      viewRole === "admin"
+                        ? "bg-primary font-bold text-white shadow-sm"
+                        : "hover:bg-black/5 text-on-surface"
+                    }`}
+                  >
+                    <ShieldCheck className="size-4" />
+                    Admin (İK)
+                  </button>
+                  <button
+                    onClick={() => setViewRole("employee")}
+                    className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors cursor-pointer ${
+                      viewRole === "employee"
+                        ? "bg-primary font-bold text-white shadow-sm"
+                        : "hover:bg-black/5 text-on-surface"
+                    }`}
+                  >
+                    <User className="size-4" />
+                    Çalışan
+                  </button>
+                </div>
+
+                {/* Çalışan modunda kimin gözünden bakılacağı */}
+                {viewRole === "employee" && (
+                  <div className="border-t border-outline-variant/30 pt-1">
+                    <p className="px-3 py-1.5 text-xs font-semibold text-on-surface-variant/70">
+                      Çalışan seç
+                    </p>
+                    <ul className="max-h-56 overflow-y-auto py-1">
+                      {allPersonnel.map((p) => (
+                        <li key={p.id}>
+                          <button
+                            onClick={() => setActingPersonnel(p.id)}
+                            className={`w-full text-left cursor-pointer rounded-lg px-3 py-2 text-sm transition-colors ${
+                              actingId === p.id
+                                ? "bg-black/5 font-bold text-primary"
+                                : "hover:bg-black/5 text-on-surface"
+                            }`}
+                          >
+                            {p.name}
+                            <span className="block text-xs text-on-surface-variant/60">
+                              {p.department}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </Popover.Popup>
             </Popover.Positioner>
           </Popover.Portal>

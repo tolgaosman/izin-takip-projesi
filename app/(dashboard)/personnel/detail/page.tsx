@@ -10,8 +10,9 @@ import {
   LeaveStatusBadge,
   PersonnelStatusBadge,
 } from "@/components/dashboard/badges";
-import { usePersonnel, useLeaveRequests } from "@/lib/data/store";
-import { leaveDayCount, leaveTypeLabels } from "@/lib/data/types";
+import { usePersonnel, useLeaveRequests, usePersonnelBalance } from "@/lib/data/store";
+import { leaveTypeLabels } from "@/lib/data/types";
+import { workingDayCount } from "@/lib/date/business-days";
 
 function formatDate(iso: string) {
   const d = new Date(iso);
@@ -23,6 +24,7 @@ function PersonnelDetail() {
   const id = params.get("id") ?? "";
   const personnel = usePersonnel();
   const leaves = useLeaveRequests();
+  const balance = usePersonnelBalance(id);
 
   const person = useMemo(
     () => personnel.find((p) => p.id === id),
@@ -106,6 +108,45 @@ function PersonnelDetail() {
         </div>
       </div>
 
+      {/* Yıllık izin bakiyesi kartları (kıdemden türetilir) */}
+      {balance && (
+        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {[
+            {
+              label: "Hak Edilen",
+              value: balance.entitled,
+              accent: "text-accent-cyan",
+              hint: "Kıdeme göre yıllık",
+            },
+            {
+              label: "Kullanılan",
+              value: balance.used,
+              accent: "text-primary",
+              hint: `${balance.pending} gün onay bekliyor`,
+            },
+            {
+              label: "Kalan",
+              value: balance.remaining,
+              accent: "text-green-600",
+              hint: "Kullanılabilir bakiye",
+            },
+          ].map((card) => (
+            <div key={card.label} className="glass-panel rounded-xl p-6">
+              <p className="font-label-mono text-xs uppercase tracking-wider text-on-surface-variant">
+                {card.label}
+              </p>
+              <p className={`mt-1 font-serif text-4xl font-bold ${card.accent}`}>
+                {card.value}
+                <span className="ml-1 text-base font-normal text-on-surface-variant">
+                  gün
+                </span>
+              </p>
+              <p className="mt-1 text-xs text-on-surface-variant/70">{card.hint}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Leave history */}
       <div className="glass-panel overflow-hidden rounded-xl">
         <div className="border-b border-white/10 px-6 py-5">
@@ -149,7 +190,7 @@ function PersonnelDetail() {
                       {formatDate(l.endDate)}
                     </td>
                     <td className="px-6 py-4 font-label-mono text-on-surface-variant">
-                      {leaveDayCount(l.startDate, l.endDate)}
+                      {workingDayCount(l.startDate, l.endDate)}
                     </td>
                     <td className="px-6 py-4">
                       <LeaveStatusBadge status={l.status} />

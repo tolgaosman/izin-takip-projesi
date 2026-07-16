@@ -7,7 +7,7 @@ export const seedPersonnel: Personnel[] = [
   { id: "p-01", name: "Ayşe Yılmaz", department: "Yazılım", phone: "0532 111 22 33", status: "active", email: "ayse.yilmaz@sirket.com", startDate: "2021-03-01" },
   { id: "p-02", name: "Mehmet Demir", department: "Yazılım", phone: "0533 222 33 44", status: "on-leave", email: "mehmet.demir@sirket.com", startDate: "2020-06-15" },
   { id: "p-03", name: "Ali Can", department: "Destek", phone: "0534 333 44 55", status: "active", email: "ali.can@sirket.com", startDate: "2022-01-10" },
-  { id: "p-04", name: "Zeynep Kaya", department: "İnsan Kaynakları", phone: "0535 444 55 66", status: "active", email: "zeynep.kaya@sirket.com", startDate: "2019-09-01" },
+  { id: "p-04", name: "Zeynep Kaya", department: "İnsan Kaynakları", phone: "0535 444 55 66", status: "active", email: "zeynep.kaya@sirket.com", startDate: "2019-09-01", role: "admin" },
   { id: "p-05", name: "Emre Şahin", department: "Satış", phone: "0536 555 66 77", status: "active", email: "emre.sahin@sirket.com", startDate: "2023-02-20" },
   { id: "p-06", name: "Fatma Aydın", department: "Muhasebe", phone: "0537 666 77 88", status: "active", email: "fatma.aydin@sirket.com", startDate: "2018-11-05" },
   { id: "p-07", name: "Burak Öztürk", department: "Yazılım", phone: "0538 777 88 99", status: "inactive", email: "burak.ozturk@sirket.com", startDate: "2021-07-12" },

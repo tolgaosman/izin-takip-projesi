@@ -1,18 +1,20 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Plus, Trash2, Pencil, Eye, Search } from "lucide-react";
-import { usePersonnel } from "@/lib/data/store";
+import { Plus, Trash2, Pencil, Eye, Search, ShieldAlert } from "lucide-react";
+import { usePersonnel, useViewRole } from "@/lib/data/store";
 import { Personnel, personnelStatusLabels } from "@/lib/data/types";
 import { Avatar } from "@/components/dashboard/avatar";
 import { deletePersonnel } from "@/lib/data/store";
 import { ConfirmDialog } from "@/components/dashboard/confirm-dialog";
 import { PersonnelDialog } from "@/components/dashboard/personnel-dialog";
+import { ExportButton } from "@/components/dashboard/export-button";
 import Link from "next/link";
 
 
 export default function PersonnelPage() {
   const personnel = usePersonnel();
+  const viewRole = useViewRole();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [toDelete, setToDelete] = useState<Personnel | null>(null);
   const [editing, setEditing] = useState<Personnel | null>(null);
@@ -30,6 +32,23 @@ export default function PersonnelPage() {
     });
   }, [personnel, searchQuery]);
 
+  // RBAC: Personel Listesi yalnız admin (İK) içindir. Çalışan doğrudan URL ile
+  // gelse bile içeriği göremez.
+  if (viewRole !== "admin") {
+    return (
+      <div className="glass-panel flex min-h-[300px] flex-col items-center justify-center gap-3 rounded-xl p-12 text-center">
+        <ShieldAlert className="size-10 text-on-surface-variant/60" />
+        <h2 className="font-serif text-2xl font-bold text-primary">
+          Bu sayfa yalnız yöneticiler içindir
+        </h2>
+        <p className="max-w-md font-sans text-base text-on-surface-variant">
+          Personel listesini görüntülemek için Admin (İK) yetkisine geçmeniz
+          gerekir. Sağ üstteki görünüm menüsünden değiştirebilirsiniz.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="space-y-8">
@@ -43,16 +62,30 @@ export default function PersonnelPage() {
               Tüm şirket personelinin detayları, departmanları ve güncel çalışma durumları.
             </p>
           </div>
-          <button
-            onClick={() => {
-              setEditing(null);
-              setDialogOpen(true);
-            }}
-            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-base font-bold text-white shadow transition-all hover:opacity-90 active:scale-95 cursor-pointer"
-          >
-            <Plus className="size-5" />
-            <span>Yeni Personel</span>
-          </button>
+          <div className="flex items-center gap-3">
+            <ExportButton
+              filename="personel-listesi"
+              rows={filteredPersonnel}
+              columns={[
+                { header: "Ad Soyad", value: (p) => p.name },
+                { header: "Departman", value: (p) => p.department },
+                { header: "Telefon", value: (p) => p.phone },
+                { header: "Durum", value: (p) => personnelStatusLabels[p.status] },
+                { header: "E-posta", value: (p) => p.email ?? "" },
+                { header: "Başlangıç", value: (p) => p.startDate ?? "" },
+              ]}
+            />
+            <button
+              onClick={() => {
+                setEditing(null);
+                setDialogOpen(true);
+              }}
+              className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-base font-bold text-white shadow transition-all hover:opacity-90 active:scale-95 cursor-pointer"
+            >
+              <Plus className="size-5" />
+              <span>Yeni Personel</span>
+            </button>
+          </div>
         </div>
 
         {personnel.length === 0 ? (
@@ -91,6 +124,7 @@ export default function PersonnelPage() {
                         <th className="px-6 py-4 font-bold">Departman</th>
                         <th className="px-6 py-4 font-bold">Durum</th>
                         <th className="px-6 py-4 font-bold">Telefon</th>
+                        <th className="px-6 py-4 font-bold">Başlangıç Tarihi</th>
                         <th className="px-6 py-4 text-right font-bold">İşlemler</th>
                       </tr>
                     </thead>
@@ -123,6 +157,11 @@ export default function PersonnelPage() {
                           {/* 4. Sütun: Telefon */}
                           <td className="px-6 py-4 text-on-surface-variant font-mono text-xs">
                             {p.phone}
+                          </td>
+
+                          {/* 4.5. Sütun: Başlangıç Tarihi */}
+                          <td className="px-6 py-4 text-on-surface-variant font-mono text-xs">
+                            {p.startDate ? new Date(p.startDate).toLocaleDateString("tr-TR") : "-"}
                           </td>
 
                           {/* 5. Sütun: Aksiyon Butonları */}

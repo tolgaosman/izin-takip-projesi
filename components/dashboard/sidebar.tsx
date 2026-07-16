@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 import { navItems } from "@/components/dashboard/nav-items";
 import { NewRequestDialog } from "@/components/dashboard/new-request-dialog";
+import { useViewRole } from "@/lib/data/store";
 import { cn } from "@/lib/utils";
 
 function isActive(pathname: string, href: string) {
@@ -13,6 +14,11 @@ function isActive(pathname: string, href: string) {
 
 export function Sidebar() {
   const pathname = usePathname();
+  const viewRole = useViewRole();
+  // Çalışan modunda adminOnly öğeler (Personel Listesi) gizlenir.
+  const visibleNavItems = navItems.filter(
+    (item) => !item.adminOnly || viewRole === "admin"
+  );
 
   return (
     <nav className="fixed left-0 top-0 z-40 hidden h-screen w-64 flex-col border-r border-outline-variant/30 bg-sidebar p-6 shadow-[40px_0_40px_0px_rgba(23,30,30,0.02)] md:flex">
@@ -33,7 +39,7 @@ export function Sidebar() {
       </div>
 
       <div className="flex-1 space-y-4">
-        {navItems.map(({ label, icon: Icon, href }) => {
+        {visibleNavItems.map(({ label, icon: Icon, href }) => {
           const active = isActive(pathname, href);
           return (
             <Link
