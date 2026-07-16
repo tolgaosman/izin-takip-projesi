@@ -1,9 +1,11 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 
+import { computeLeaveBalance } from "@/lib/data/balance";
 import { seedLeaveRequests, seedPersonnel } from "@/lib/data/seed";
 import type {
+  LeaveBalance,
   LeaveRequest,
   LeaveStatus,
   Personnel,
@@ -15,9 +17,11 @@ import type {
 
 const PERSONNEL_KEY = "izin-takip-personnel";
 const LEAVES_KEY = "izin-takip-leaves";
+const ROLE_KEY = "izin-takip-role";
 
 let personnel: Personnel[] = seedPersonnel;
 let leaves: LeaveRequest[] = seedLeaveRequests;
+let activeRole = "Admin (Tümü)";
 let initialized = false;
 
 const listeners = new Set<() => void>();
@@ -26,10 +30,9 @@ function readKey<T>(key: string, fallback: T): T {
   try {
     const stored = window.localStorage.getItem(key);
     if (stored) return JSON.parse(stored) as T;
-    // First run: persist the seed so it stays stable across reloads.
     window.localStorage.setItem(key, JSON.stringify(fallback));
   } catch {
-    // ignore malformed/unavailable storage
+    // ignore
   }
   return fallback;
 }
@@ -39,6 +42,7 @@ function ensureInit() {
   initialized = true;
   personnel = readKey(PERSONNEL_KEY, seedPersonnel);
   leaves = readKey(LEAVES_KEY, seedLeaveRequests);
+  activeRole = readKey(ROLE_KEY, "Admin (Tümü)");
 }
 
 function persist(key: string, value: unknown) {
@@ -58,14 +62,47 @@ function subscribe(callback: () => void) {
   return () => listeners.delete(callback);
 }
 
+let cachedFilteredPersonnel: Personnel[] | null = null;
+let cachedFilteredLeaves: LeaveRequest[] | null = null;
+
+function clearCache() {
+  cachedFilteredPersonnel = null;
+  cachedFilteredLeaves = null;
+}
+
+export const ROLE_DEPARTMENTS: Record<string, string[]> = {
+  "Admin (Tümü)": [],
+  "Teknoloji": ["Yazılım", "Donanım", "Destek"],
+  "İnsan Kaynakları": ["İnsan Kaynakları"],
+  "Satış ve Pazarlama": ["Satış", "Pazarlama"],
+  "Muhasebe": ["Muhasebe"],
+};
+
+export const AVAILABLE_ROLES = Object.keys(ROLE_DEPARTMENTS);
+
 function getPersonnelSnapshot(): Personnel[] {
   ensureInit();
-  return personnel;
+  if (activeRole === "Admin (Tümü)") return personnel;
+  
+  if (!cachedFilteredPersonnel) {
+    const allowed = ROLE_DEPARTMENTS[activeRole] || [];
+    cachedFilteredPersonnel = personnel.filter((p) => allowed.includes(p.department));
+  }
+  return cachedFilteredPersonnel;
 }
 
 function getLeavesSnapshot(): LeaveRequest[] {
   ensureInit();
-  return leaves;
+  if (activeRole === "Admin (Tümü)") return leaves;
+  
+  if (!cachedFilteredLeaves) {
+    const allowed = ROLE_DEPARTMENTS[activeRole] || [];
+    const allowedPersonnelIds = new Set(
+      personnel.filter((p) => allowed.includes(p.department)).map((p) => p.id)
+    );
+    cachedFilteredLeaves = leaves.filter((l) => allowedPersonnelIds.has(l.personnelId));
+  }
+  return cachedFilteredLeaves;
 }
 
 // Server snapshots must be referentially stable across calls.
@@ -78,12 +115,14 @@ function getLeavesServerSnapshot(): LeaveRequest[] {
 
 function setPersonnel(next: Personnel[]) {
   personnel = next;
+  clearCache();
   persist(PERSONNEL_KEY, next);
   emit();
 }
 
 function setLeaves(next: LeaveRequest[]) {
   leaves = next;
+  clearCache();
   persist(LEAVES_KEY, next);
   emit();
 }
@@ -96,6 +135,24 @@ function newId(): string {
 }
 
 /* ── React hooks ── */
+
+export function useRole(): string {
+  return useSyncExternalStore(
+    subscribe,
+    () => {
+      ensureInit();
+      return activeRole;
+    },
+    () => "Admin (Tümü)"
+  );
+}
+
+export function setRole(role: string) {
+  activeRole = role;
+  clearCache();
+  persist(ROLE_KEY, role);
+  emit();
+}
 
 export function usePersonnel(): Personnel[] {
   return useSyncExternalStore(
@@ -123,12 +180,24 @@ export type DashboardStats = {
 export function useDashboardStats(): DashboardStats {
   const people = usePersonnel();
   const requests = useLeaveRequests();
+
   return {
     totalPersonnel: people.length,
     pending: requests.filter((r) => r.status === "pending").length,
     approved: requests.filter((r) => r.status === "approved").length,
     rejected: requests.filter((r) => r.status === "rejected").length,
   };
+}
+
+/* ── Leave balance (derived) ──
+   Reactive hook for UI (re-renders when personnel/leaves change). Always
+   computes from the FULL data set (unfiltered by view role) so a person's
+   real remaining balance is correct regardless of who is looking. */
+export function usePersonnelBalance(id: string): LeaveBalance | undefined {
+  // Subscribe to both slices so the memo re-runs on any relevant change.
+  usePersonnel();
+  useLeaveRequests();
+  return useMemo(() => getLeaveBalance(id), [id, personnel, leaves]);
 }
 
 /* ── Non-reactive readers (safe to call in event handlers) ── */
@@ -141,6 +210,15 @@ export function getPersonnelById(id: string): Personnel | undefined {
 export function getLeavesByPersonnel(personnelId: string): LeaveRequest[] {
   ensureInit();
   return leaves.filter((l) => l.personnelId === personnelId);
+}
+
+/** Non-reactive balance read — for use inside event handlers (e.g. the
+    leave form's submit guard). Uses the full, unfiltered data. */
+export function getLeaveBalance(id: string): LeaveBalance | undefined {
+  ensureInit();
+  const person = personnel.find((p) => p.id === id);
+  if (!person) return undefined;
+  return computeLeaveBalance(person, leaves);
 }
 
 /* ── Personnel mutations ── */

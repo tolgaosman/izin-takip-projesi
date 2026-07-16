@@ -1,21 +1,25 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
 
 /* Client-side route guard for the dashboard group. Static export can't
    run server middleware, so protection happens here after hydration. */
 
+// Hydration flag without setState-in-effect: false during SSR/hydration,
+// true once running on the client.
+const emptySubscribe = () => () => {};
+
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
 
   useEffect(() => {
     if (mounted && !user) {

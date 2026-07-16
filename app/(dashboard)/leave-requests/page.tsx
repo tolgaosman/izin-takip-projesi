@@ -81,7 +81,7 @@ export default function LeaveRequestsPage() {
         {requests.length === 0 ? (
           <div className="flex min-h-[300px] flex-col items-center justify-center text-center p-12 glass-panel rounded-xl my-6">
             <p className="font-sans text-lg text-on-surface-variant max-w-md">
-              Sistemde henüz izin talebi bulunamadı. Listeyi oluşturmak için sağ üstteki "Yeni İzin Talebi" butonuna tıklayınız.
+              Sistemde henüz izin talebi bulunamadı. Listeyi oluşturmak için sağ üstteki &quot;Yeni İzin Talebi&quot; butonuna tıklayınız.
             </p>
           </div>
         ) : (
@@ -128,86 +128,89 @@ export default function LeaveRequestsPage() {
                             key={r.id}
                             className="border-b border-outline-variant/15 font-sans text-sm text-on-surface hover:bg-black/[0.02]"
                           >
+                            {/* Personel Avatarlı Kolon */}
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-3">
-                            <Avatar name={person?.name || "Bilinmeyen"} className="size-8" />
-                            <div>
-                              <div className="font-bold text-base text-primary">
-                                {person?.name || "Bilinmeyen Personel"}
+                                <Avatar name={person?.name || "Bilinmeyen"} className="size-8" />
+                                <div>
+                                  <div className="font-bold text-base text-primary">
+                                    {person?.name || "Bilinmeyen Personel"}
+                                  </div>
+                                  <div className="text-xs text-on-surface-variant/70">
+                                    {person?.department || "-"}
+                                  </div>
+                                </div>
                               </div>
-                              <div className="text-xs text-on-surface-variant/70">
-                                {person?.department || "-"}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
+                            </td>
 
-                        {/* İzin Türü */}
-                        <td className="px-6 py-4 font-medium text-primary">
-                          {leaveTypeLabels[r.type]}
-                        </td>
+                            {/* İzin Türü */}
+                            <td className="px-6 py-4 font-medium text-primary">
+                              {leaveTypeLabels[r.type]}
+                            </td>
 
-                        {/* Tarih Aralığı */}
-                        <td className="px-6 py-4 font-mono text-xs text-on-surface-variant">
-                          {new Date(r.startDate).toLocaleDateString("tr-TR")} - {new Date(r.endDate).toLocaleDateString("tr-TR")}
-                        </td>
+                            {/* Tarih Aralığı */}
+                            <td className="px-6 py-4 font-mono text-xs text-on-surface-variant">
+                              {new Date(r.startDate).toLocaleDateString("tr-TR")} - {new Date(r.endDate).toLocaleDateString("tr-TR")}
+                            </td>
 
-                        {/* İzin Süresi */}
-                        <td className="px-6 py-4 font-mono text-xs font-bold text-primary">
-                          {days} Gün
-                        </td>
+                            {/* İzin Süresi */}
+                            <td className="px-6 py-4 font-mono text-xs font-bold text-primary">
+                              {days} Gün
+                            </td>
 
-                        {/* Durum Rozeti */}
-                        <td className="px-6 py-4">
-                          <LeaveStatusBadge status={r.status} />
-                        </td>
+                            {/* Durum Rozeti */}
+                            <td className="px-6 py-4">
+                              <LeaveStatusBadge status={r.status} />
+                            </td>
 
-                        {/* İşlemler (Onay/Red/Düzenle/Sil) */}
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            {r.status === "pending" && (
-                              <>
+                            {/* İşlemler (Onay/Red/Düzenle/Sil) */}
+                            <td className="px-6 py-4 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                {r.status === "pending" && (
+                                  <>
+                                    <button
+                                      onClick={() => setLeaveStatus(r.id, "approved")}
+                                      title="Onayla"
+                                      className="flex size-8 items-center justify-center rounded-md border border-green-600/30 bg-green-500/10 text-green-700 hover:bg-green-500/20 active:scale-95 cursor-pointer"
+                                    >
+                                      <Check className="size-4" />
+                                    </button>
+                                    <button
+                                      onClick={() => setLeaveStatus(r.id, "rejected")}
+                                      title="Reddet"
+                                      className="flex size-8 items-center justify-center rounded-md border border-red-600/30 bg-red-500/10 text-red-700 hover:bg-red-500/20 active:scale-95 cursor-pointer"
+                                    >
+                                      <X className="size-4" />
+                                    </button>
+                                  </>
+                                )}
                                 <button
-                                  onClick={() => setLeaveStatus(r.id, "approved")}
-                                  title="Onayla"
-                                  className="flex size-8 items-center justify-center rounded-md border border-green-600/30 bg-green-500/10 text-green-700 hover:bg-green-500/20 active:scale-95 cursor-pointer"
+                                  onClick={() => {
+                                    setEditing(r);
+                                    setDialogOpen(true);
+                                  }}
+                                  title="Düzenle"
+                                  className="flex size-8 items-center justify-center rounded-md border border-outline-variant/30 text-on-surface-variant hover:bg-black/5 active:scale-95 cursor-pointer"
                                 >
-                                  <Check className="size-4" />
+                                  <CalendarClock className="size-4" />
                                 </button>
                                 <button
-                                  onClick={() => setLeaveStatus(r.id, "rejected")}
-                                  title="Reddet"
-                                  className="flex size-8 items-center justify-center rounded-md border border-red-600/30 bg-red-500/10 text-red-700 hover:bg-red-500/20 active:scale-95 cursor-pointer"
+                                  onClick={() => setToDelete(r)}
+                                  title="Sil"
+                                  className="flex size-8 items-center justify-center rounded-md border border-destructive/30 bg-destructive/5 text-destructive hover:bg-destructive/10 active:scale-95 cursor-pointer"
                                 >
-                                  <X className="size-4" />
+                                  <Trash2 className="size-4" />
                                 </button>
-                              </>
-                            )}
-                            <button
-                              onClick={() => {
-                                setEditing(r);
-                                setDialogOpen(true);
-                              }}
-                              title="Düzenle"
-                              className="flex size-8 items-center justify-center rounded-md border border-outline-variant/30 text-on-surface-variant hover:bg-black/5 active:scale-95 cursor-pointer"
-                            >
-                              <CalendarClock className="size-4" />
-                            </button>
-                            <button
-                              onClick={() => setToDelete(r)}
-                              title="Sil"
-                              className="flex size-8 items-center justify-center rounded-md border border-destructive/30 bg-destructive/5 text-destructive hover:bg-destructive/10 active:scale-95 cursor-pointer"
-                            >
-                              <Trash2 className="size-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -226,8 +229,8 @@ export default function LeaveRequestsPage() {
         onOpenChange={(o) => !o && setToDelete(null)}
         title="Talebi Sil"
         description="Bu izin talebini silmek istediğinize emin misiniz? Bu işlem geri alınamaz."
-        confirmText="Sil"
-        cancelText="Vazgeç"
+        confirmLabel="Sil"
+        cancelLabel="Vazgeç"
         onConfirm={() => {
           if (toDelete) {
             deleteLeaveRequest(toDelete.id);

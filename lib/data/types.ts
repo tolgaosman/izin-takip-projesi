@@ -3,6 +3,10 @@
 
 export type PersonnelStatus = "active" | "on-leave" | "inactive";
 
+/** RBAC simulation role. An "employee" only ever sees their own data;
+    an "admin" (İK) sees everything and can approve/reject requests. */
+export type UserRole = "employee" | "admin";
+
 export type Personnel = {
   id: string;
   name: string;
@@ -10,11 +14,14 @@ export type Personnel = {
   phone: string;
   status: PersonnelStatus;
   email?: string;
-  /** Employment start date, ISO (yyyy-mm-dd) */
+  /** Employment start date, ISO (yyyy-mm-dd). Also the seniority source
+      used to derive each person's annual leave entitlement. */
   startDate?: string;
+  /** Access level for the RBAC simulation. Defaults to "employee" when absent. */
+  role?: UserRole;
 };
 
-export type LeaveType = "annual" | "sick" | "unpaid";
+export type LeaveType = "annual" | "excuse" | "sick" | "unpaid";
 export type LeaveStatus = "pending" | "approved" | "rejected";
 
 export type LeaveRequest = {
@@ -35,6 +42,7 @@ export type LeaveRequest = {
 
 export const leaveTypeLabels: Record<LeaveType, string> = {
   annual: "Yıllık İzin",
+  excuse: "Mazeret İzni",
   sick: "Hastalık İzni",
   unpaid: "Ücretsiz İzin",
 };
@@ -51,7 +59,9 @@ export const personnelStatusLabels: Record<PersonnelStatus, string> = {
   inactive: "Pasif",
 };
 
-/** Whole days between two ISO dates, inclusive of both ends. */
+/** Whole calendar days between two ISO dates, inclusive of both ends.
+    NOTE: counts weekends/holidays too. For the number of days that actually
+    come out of someone's balance, use workingDayCount() in lib/date. */
 export function leaveDayCount(startDate: string, endDate: string): number {
   const start = new Date(startDate);
   const end = new Date(endDate);
@@ -59,3 +69,19 @@ export function leaveDayCount(startDate: string, endDate: string): number {
   if (Number.isNaN(ms) || ms < 0) return 0;
   return Math.floor(ms / 86_400_000) + 1;
 }
+
+/* ── Leave balance ─────────────────────────────────────────────────────
+   A *derived* view object — it is never stored. It is recomputed on demand
+   from a person + their approved annual leaves, so it can never drift out of
+   sync with the underlying data (single source of truth). */
+export type LeaveBalance = {
+  personnelId: string;
+  /** Yearly annual-leave entitlement, derived from seniority (startDate). */
+  entitled: number;
+  /** Working days already consumed by APPROVED annual leaves. */
+  used: number;
+  /** Working days locked up in PENDING annual requests (not yet deducted). */
+  pending: number;
+  /** entitled - used. Can be shown to the user as "kalan izin". */
+  remaining: number;
+};

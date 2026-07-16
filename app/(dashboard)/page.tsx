@@ -1,15 +1,18 @@
+"use client";
+
 import { DashboardStats } from "@/components/dashboard/dashboard-stats";
 import { LeaveDistributionChart } from "@/components/dashboard/leave-distribution-chart";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
+import { OnLeaveTable } from "@/components/dashboard/on-leave-table";
 
 export default function IzinTakipDashboard() {
   return (
     <>
       <div className="mb-12">
-        <h2 className="mb-2 font-serif text-5xl font-bold tracking-tight text-primary md:text-6xl">
+        <h2 className="font-serif text-5xl font-bold text-primary">
           Personel Genel Bakış
         </h2>
-        <p className="max-w-2xl font-sans text-lg text-on-surface-variant">
+        <p className="font-sans text-base text-on-surface-variant mt-2">
           Ekibinizin dinlenme ve katılım durumlarına bütünsel bir bakış. İzin taleplerini hak ettikleri özenle yönetin.
         </p>
       </div>
@@ -20,11 +23,16 @@ export default function IzinTakipDashboard() {
       </div>
 
       {/* Chart + activity */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <LeaveDistributionChart />
         </div>
         <RecentActivity />
+      </div>
+
+      {/* On Leave Table */}
+      <div className="mb-8">
+        <OnLeaveTable />
       </div>
     </>
   );

@@ -57,7 +57,9 @@ export default function PersonnelPage() {
 
         {personnel.length === 0 ? (
           <div className="flex min-h-[300px] flex-col items-center justify-center text-center p-12 glass-panel rounded-xl my-6">
-            <p className="font-sans text-lg text-on-surface-variant max-w-md">Sistemde henüz personel kaydı bulunamadı. Listeyi oluşturmak için sağ üstteki "Yeni Personel" butonuna tıklayınız.</p>
+            <p className="font-sans text-lg text-on-surface-variant max-w-md">
+              Sistemde henüz personel kaydı bulunamadı. Listeyi oluşturmak için sağ üstteki &quot;Yeni Personel&quot; butonuna tıklayınız.
+            </p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -106,57 +108,60 @@ export default function PersonnelPage() {
                             </div>
                           </td>
 
-                      {/* 2. Sütun: Departman */}
-                      <td className="px-6 py-4 text-on-surface-variant font-sans">
-                        {p.department}
-                      </td>
+                          {/* 2. Sütun: Departman */}
+                          <td className="px-6 py-4 text-on-surface-variant font-sans">
+                            {p.department}
+                          </td>
 
-                      {/* 3. Sütun: Durum (Badge) */}
-                      <td className="px-6 py-4">
-                        <span className="inline-block rounded-full border border-outline-variant/30 px-3 py-1 font-mono text-xs font-semibold bg-white/50 text-secondary">
-                          {personnelStatusLabels[p.status]}
-                        </span>
-                      </td>
+                          {/* 3. Sütun: Durum (Badge) */}
+                          <td className="px-6 py-4">
+                            <span className="inline-block rounded-full border border-outline-variant/30 px-3 py-1 font-mono text-xs font-semibold bg-white/50 text-secondary">
+                              {personnelStatusLabels[p.status]}
+                            </span>
+                          </td>
 
-                      {/* 4. Sütun: Telefon */}
-                      <td className="px-6 py-4 text-on-surface-variant font-mono text-xs">
-                        {p.phone}
-                      </td>
+                          {/* 4. Sütun: Telefon */}
+                          <td className="px-6 py-4 text-on-surface-variant font-mono text-xs">
+                            {p.phone}
+                          </td>
 
-                      {/* 5. Sütun: Aksiyon Butonları */}
-                      <td className="px-6 py-4">
-                        <div className="flex items-center justify-end gap-2">
+                          {/* 5. Sütun: Aksiyon Butonları */}
+                          <td className="px-6 py-4">
+                            <div className="flex items-center justify-end gap-2">
+                              <Link
+                                href={`/personnel/detail?id=${p.id}`}
+                                className="flex size-8 items-center justify-center rounded-lg border border-outline-variant/30 text-on-surface-variant transition-colors hover:bg-white hover:text-primary"
+                                title="Detay"
+                              >
+                                <Eye className="size-4" />
+                              </Link>
 
-                          <Link
-                            href={`/personnel/detail?id=${p.id}`}
-                            className="flex size-8 items-center justify-center rounded-lg border border-outline-variant/30 text-on-surface-variant transition-colors hover:bg-white hover:text-primary"
-                            title="Detay"
-                          >
-                            <Eye className="size-4" />
-                          </Link>
-
-                          <button onClick={() => {
-                            setEditing(p);
-                            setDialogOpen(true);
-                          }}
-                            className="flex size-8 items-center justify-center rounded-lg border border-outline-variant/30 text-on-surface-variant transition-colors hover:bg-white hover:text-primary cursor-pointer"
-                          >
-                            <Pencil className="size-4" />
-                          </button>
-                          <button
-                            onClick={() => setToDelete(p)}
-                            className="flex size-8 items-center justify-center rounded-lg border border-outline-variant/30 text-destructive transition-colors hover:bg-destructive/10 cursor-pointer"
-                            title="Sil"
-                          >
-                            <Trash2 className="size-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                              <button
+                                onClick={() => {
+                                  setEditing(p);
+                                  setDialogOpen(true);
+                                }}
+                                className="flex size-8 items-center justify-center rounded-lg border border-outline-variant/30 text-on-surface-variant transition-colors hover:bg-white hover:text-primary cursor-pointer"
+                                title="Düzenle"
+                              >
+                                <Pencil className="size-4" />
+                              </button>
+                              <button
+                                onClick={() => setToDelete(p)}
+                                className="flex size-8 items-center justify-center rounded-lg border border-outline-variant/30 text-destructive transition-colors hover:bg-destructive/10 cursor-pointer"
+                                title="Sil"
+                              >
+                                <Trash2 className="size-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

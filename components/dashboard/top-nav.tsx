@@ -1,14 +1,13 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Menu } from "@base-ui/react/menu";
 import { Popover } from "@base-ui/react/popover";
 import { Bell, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
 import { useAuth } from "@/components/auth/auth-provider";
 import { UserMenu } from "@/components/dashboard/user-menu";
-import { useLeaveRequests, usePersonnel } from "@/lib/data/store";
+import { useLeaveRequests, usePersonnel, useRole, setRole, AVAILABLE_ROLES } from "@/lib/data/store";
 import { leaveTypeLabels } from "@/lib/data/types";
 
 function relativeTime(iso: string): string {
@@ -35,8 +34,10 @@ export function TopNav() {
   const { user } = useAuth();
   const requests = useLeaveRequests();
   const personnel = usePersonnel();
+  const activeRole = useRole();
 
   const notifications = useMemo(() => {
+    // ... rest of notifications memo ...
     const byId = new Map(personnel.map((p) => [p.id, p.name]));
     const items: { id: string; title: string; time: string; sortTime: number }[] = [];
     const todayStr = new Date().toISOString().split("T")[0];
@@ -45,7 +46,6 @@ export function TopNav() {
       const name = byId.get(r.personnelId) ?? "Bilinmeyen";
 
       if (r.status === "pending") {
-        // İzin Talepleri
         items.push({
           id: `${r.id}-pending`,
           title: `${name} ${leaveTypeLabels[r.type]} talep etti`,
@@ -57,7 +57,6 @@ export function TopNav() {
         const end = new Date(r.endDate).getTime();
         const today = new Date(todayStr).getTime();
 
-        // İzne Çıkış
         if (today >= start) {
           items.push({
             id: `${r.id}-on-leave`,
@@ -67,7 +66,6 @@ export function TopNav() {
           });
         }
 
-        // İzinden Dönüş (İznin bitiş tarihinden sonraki gün döner)
         if (today > end) {
           const nextDay = new Date(end + 86400000);
           const nextDayStr = nextDay.toISOString().split("T")[0];
@@ -81,7 +79,6 @@ export function TopNav() {
       }
     });
 
-    // En yeni aktivite en üstte olacak şekilde sırala ve ilk 5 tanesini al
     return items
       .sort((a, b) => b.sortTime - a.sortTime)
       .slice(0, 5);
@@ -94,6 +91,40 @@ export function TopNav() {
       </div>
 
       <div className="flex items-center gap-4">
+        {/* Role Selector */}
+        <Popover.Root>
+          <Popover.Trigger aria-label="Rol Seçimi" className="flex items-center gap-2 rounded-lg border border-outline-variant/30 bg-surface-1 px-3 py-1.5 font-sans text-sm font-bold text-on-surface-variant transition-colors hover:bg-black/5 hover:text-primary data-[popup-open]:bg-black/5 cursor-pointer">
+            <span>{activeRole}</span>
+            <ChevronRight className="size-4 rotate-90" />
+          </Popover.Trigger>
+          <Popover.Portal>
+            <Popover.Positioner sideOffset={8} align="end" className="z-50">
+              <Popover.Popup className={`${popupClasses} w-56`}>
+                <div className="border-b border-outline-variant/30 px-3 py-2">
+                  <Popover.Title className="text-xs font-bold uppercase tracking-wider text-on-surface-variant/70">
+                    Görünüm Yetkisi
+                  </Popover.Title>
+                </div>
+                <ul className="py-1">
+                  {AVAILABLE_ROLES.map((role) => (
+                    <li key={role}>
+                      <button
+                        onClick={() => setRole(role)}
+                        className={`w-full text-left cursor-pointer rounded-lg px-3 py-2 text-sm transition-colors ${
+                          activeRole === role
+                            ? "bg-primary font-bold text-white shadow-sm"
+                            : "hover:bg-black/5 text-on-surface"
+                        }`}
+                      >
+                        {role}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </Popover.Popup>
+            </Popover.Positioner>
+          </Popover.Portal>
+        </Popover.Root>
         {/* Takvim Dropdown */}
         <Popover.Root>
           <Popover.Trigger aria-label="Takvim" className={iconButtonClasses}>
