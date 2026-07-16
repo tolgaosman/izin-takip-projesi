@@ -61,76 +61,76 @@
 }
 
 :root {
-  --background: #fcf9f8;
-  --foreground: #171e1e;
+  --background: #ffffff;
+  --foreground: #2a1216;
   --card: #ffffff;
-  --card-foreground: #171e1e;
+  --card-foreground: #2a1216;
   --popover: #ffffff;
-  --popover-foreground: #171e1e;
-  --primary: #171e1e;
+  --popover-foreground: #2a1216;
+  --primary: #7b1e2b;
   --primary-foreground: #ffffff;
-  --secondary: #6a5d43;
+  --secondary: #9e5561;
   --secondary-foreground: #ffffff;
-  --muted: #f6f3f2;
-  --muted-foreground: #737878;
-  --accent: #f4e0c0;
-  --accent-foreground: #241a06;
-  --destructive: #ba1a1a;
-  --border: rgba(44, 51, 51, 0.15);
-  --input: rgba(44, 51, 51, 0.15);
-  --ring: #171e1e;
-  --chart-1: #171e1e;
-  --chart-2: #6a5d43;
-  --chart-3: #05211f;
-  --chart-4: #737878;
-  --chart-5: #eae7e7;
+  --muted: #f7eff0;
+  --muted-foreground: #8a6a70;
+  --accent: #f3dfe2;
+  --accent-foreground: #5a1622;
+  --destructive: #c0392b;
+  --border: rgba(123, 30, 43, 0.15);
+  --input: rgba(123, 30, 43, 0.15);
+  --ring: #7b1e2b;
+  --chart-1: #7b1e2b;
+  --chart-2: #9e5561;
+  --chart-3: #5a1622;
+  --chart-4: #b98a90;
+  --chart-5: #f0e3e5;
   --radius: 0.25rem;
-  --sidebar: #f6f3f2;
-  --sidebar-foreground: #171e1e;
-  --sidebar-primary: #171e1e;
+  --sidebar: #fbf4f5;
+  --sidebar-foreground: #2a1216;
+  --sidebar-primary: #7b1e2b;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e5e2e1;
-  --sidebar-accent-foreground: #171e1e;
-  --sidebar-border: rgba(44, 51, 51, 0.15);
-  --sidebar-ring: #171e1e;
+  --sidebar-accent: #f0dde0;
+  --sidebar-accent-foreground: #7b1e2b;
+  --sidebar-border: rgba(123, 30, 43, 0.15);
+  --sidebar-ring: #7b1e2b;
 
-  /* Dashboard tokens — mapped to the new organic light theme */
-  --accent-cyan: #171e1e;
-  --accent-violet: #6a5d43;
+  /* Dashboard tokens — bordo (burgundy) + white theme */
+  --accent-cyan: #7b1e2b;
+  --accent-violet: #9e5561;
   --surface-1: #ffffff;
-  --surface-2: #f6f3f2;
-  --surface-3: #f0edec;
-  --on-surface: #171e1e;
-  --on-surface-variant: #434848;
+  --surface-2: #faf3f4;
+  --surface-3: #f3e7e9;
+  --on-surface: #2a1216;
+  --on-surface-variant: #6e4a50;
 }
 
 .dark {
-  --background: #fcf9f8;
-  --foreground: #171e1e;
+  --background: #ffffff;
+  --foreground: #2a1216;
   --card: #ffffff;
-  --card-foreground: #171e1e;
+  --card-foreground: #2a1216;
   --popover: #ffffff;
-  --popover-foreground: #171e1e;
-  --primary: #171e1e;
+  --popover-foreground: #2a1216;
+  --primary: #7b1e2b;
   --primary-foreground: #ffffff;
-  --secondary: #6a5d43;
+  --secondary: #9e5561;
   --secondary-foreground: #ffffff;
-  --muted: #f6f3f2;
-  --muted-foreground: #737878;
-  --accent: #f4e0c0;
-  --accent-foreground: #241a06;
-  --destructive: #ba1a1a;
-  --border: rgba(44, 51, 51, 0.15);
-  --input: rgba(44, 51, 51, 0.15);
-  --ring: #171e1e;
-  --sidebar: #f6f3f2;
-  --sidebar-foreground: #171e1e;
-  --sidebar-primary: #171e1e;
+  --muted: #f7eff0;
+  --muted-foreground: #8a6a70;
+  --accent: #f3dfe2;
+  --accent-foreground: #5a1622;
+  --destructive: #c0392b;
+  --border: rgba(123, 30, 43, 0.15);
+  --input: rgba(123, 30, 43, 0.15);
+  --ring: #7b1e2b;
+  --sidebar: #fbf4f5;
+  --sidebar-foreground: #2a1216;
+  --sidebar-primary: #7b1e2b;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e5e2e1;
-  --sidebar-accent-foreground: #171e1e;
-  --sidebar-border: rgba(44, 51, 51, 0.15);
-  --sidebar-ring: #171e1e;
+  --sidebar-accent: #f0dde0;
+  --sidebar-accent-foreground: #7b1e2b;
+  --sidebar-border: rgba(123, 30, 43, 0.15);
+  --sidebar-ring: #7b1e2b;
 }
 
 @layer base {
@@ -138,9 +138,9 @@
     @apply border-border outline-ring/50;
   }
   body {
-    background-color: #fcf9f8;
+    background-color: #ffffff;
     background-image: url("https://www.transparenttextures.com/patterns/natural-paper.png");
-    color: #171e1e;
+    color: #2a1216;
   }
   html {
     @apply font-sans;
@@ -149,13 +149,13 @@
 
 /* ── Dashboard organic sketch helpers ───────────────────────────── */
 @utility hand-drawn-border {
-  border: 1px solid rgba(44, 51, 51, 0.15);
+  border: 1px solid rgba(123, 30, 43, 0.15);
   box-shadow: 40px 40px 40px 0px rgba(23, 30, 30, 0.04);
 }
 
 @utility glass-panel {
   background-color: var(--surface-1, #ffffff);
-  border: 1px solid rgba(44, 51, 51, 0.15);
+  border: 1px solid rgba(123, 30, 43, 0.15);
   box-shadow: 40px 40px 40px 0px rgba(23, 30, 30, 0.04);
 }
 
@@ -168,10 +168,10 @@
 }
 
 @utility chart-bar-cyan {
-  border-top: 1.5px solid rgba(23, 30, 30, 0.5);
-  border-left: 1.5px solid rgba(23, 30, 30, 0.5);
-  border-right: 1.5px solid rgba(23, 30, 30, 0.5);
-  background-color: rgba(44, 51, 51, 0.05);
+  border-top: 1.5px solid rgba(123, 30, 43, 0.5);
+  border-left: 1.5px solid rgba(123, 30, 43, 0.5);
+  border-right: 1.5px solid rgba(123, 30, 43, 0.5);
+  background-color: rgba(123, 30, 43, 0.05);
   position: relative;
   overflow: hidden;
 }
@@ -181,14 +181,14 @@
   position: absolute;
   inset: 0;
   opacity: 0.15;
-  background-image: repeating-linear-gradient(45deg, transparent, transparent 5px, #171e1e 5px, #171e1e 6px);
+  background-image: repeating-linear-gradient(45deg, transparent, transparent 5px, #7b1e2b 5px, #7b1e2b 6px);
 }
 
 @utility chart-bar-violet {
-  border-top: 1.5px solid rgba(23, 30, 30, 0.5);
-  border-left: 1.5px solid rgba(23, 30, 30, 0.5);
-  border-right: 1.5px solid rgba(23, 30, 30, 0.5);
-  background-color: rgba(106, 93, 67, 0.05);
+  border-top: 1.5px solid rgba(158, 85, 97, 0.5);
+  border-left: 1.5px solid rgba(158, 85, 97, 0.5);
+  border-right: 1.5px solid rgba(158, 85, 97, 0.5);
+  background-color: rgba(158, 85, 97, 0.05);
   position: relative;
   overflow: hidden;
 }
@@ -198,7 +198,7 @@
   position: absolute;
   inset: 0;
   opacity: 0.15;
-  background-image: repeating-linear-gradient(-45deg, transparent, transparent 5px, #6a5d43 5px, #6a5d43 6px);
+  background-image: repeating-linear-gradient(-45deg, transparent, transparent 5px, #9e5561 5px, #9e5561 6px);
 }
 
 .custom-scrollbar::-webkit-scrollbar {

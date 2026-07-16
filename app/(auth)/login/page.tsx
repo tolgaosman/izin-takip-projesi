@@ -63,7 +63,7 @@ export default function LoginPage() {
 
         <Button
           type="submit"
-          className="mt-2 h-auto w-full bg-accent-cyan py-3 text-base font-bold text-[#003739] hover:bg-accent-cyan/90"
+          className="mt-2 h-auto w-full bg-accent-cyan py-3 text-base font-bold text-white hover:bg-accent-cyan/90"
         >
           Giriş Yap
         </Button>

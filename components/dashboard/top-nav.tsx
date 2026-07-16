@@ -1,26 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Menu } from "@base-ui/react/menu";
 import { Popover } from "@base-ui/react/popover";
-import { Bell, Calendar, LogOut, Settings, SlidersHorizontal, User, ChevronLeft, ChevronRight } from "lucide-react";
+import { Bell, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth/auth-provider";
 import { UserMenu } from "@/components/dashboard/user-menu";
+import { useLeaveRequests, usePersonnel } from "@/lib/data/store";
+import { leaveTypeLabels } from "@/lib/data/types";
 
-type Notification = {
-  id: number;
-  title: string;
-  time: string;
-};
-
-const notifications: Notification[] = [
-  { id: 1, title: "Ayşe Yılmaz yıllık izin talep etti", time: "2 saat önce" },
-  { id: 2, title: "Sistem 3 talebi onayladı", time: "4 saat önce" },
-  { id: 3, title: "Mehmet Demir izinden döndü", time: "Dün" },
-];
+function relativeTime(iso: string): string {
+  const then = new Date(iso).getTime();
+  const diff = Date.now() - then;
+  if (Number.isNaN(diff)) return "";
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${Math.max(mins, 1)} dk önce`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} saat önce`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return "Dün";
+  if (days < 30) return `${days} gün önce`;
+  return new Date(iso).toLocaleDateString("tr-TR");
+}
 
 const iconButtonClasses =
   "flex size-10 items-center justify-center rounded-full text-on-surface-variant transition-colors hover:bg-black/5 hover:text-primary data-[popup-open]:bg-black/5 data-[popup-open]:text-primary";
@@ -29,18 +32,66 @@ const popupClasses =
   "glass-panel z-50 rounded-xl p-2 shadow-2xl outline-none transition-all data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0";
 
 export function TopNav() {
-  const router = useRouter();
-  const { logout } = useAuth();
+  const { user } = useAuth();
+  const requests = useLeaveRequests();
+  const personnel = usePersonnel();
 
-  const settingsItems = [
-    { label: "Profil", icon: User, onClick: () => router.push("/profile") },
-    { label: "Tercihler", icon: SlidersHorizontal, onClick: () => router.push("/profile") },
-    { label: "Çıkış Yap", icon: LogOut, onClick: logout },
-  ];
+  const notifications = useMemo(() => {
+    const byId = new Map(personnel.map((p) => [p.id, p.name]));
+    const items: { id: string; title: string; time: string; sortTime: number }[] = [];
+    const todayStr = new Date().toISOString().split("T")[0];
+
+    requests.forEach((r) => {
+      const name = byId.get(r.personnelId) ?? "Bilinmeyen";
+
+      if (r.status === "pending") {
+        // İzin Talepleri
+        items.push({
+          id: `${r.id}-pending`,
+          title: `${name} ${leaveTypeLabels[r.type]} talep etti`,
+          time: relativeTime(r.createdAt),
+          sortTime: new Date(r.createdAt).getTime(),
+        });
+      } else if (r.status === "approved") {
+        const start = new Date(r.startDate).getTime();
+        const end = new Date(r.endDate).getTime();
+        const today = new Date(todayStr).getTime();
+
+        // İzne Çıkış
+        if (today >= start) {
+          items.push({
+            id: `${r.id}-on-leave`,
+            title: `${name} izne çıktı`,
+            time: relativeTime(r.startDate + "T09:00:00"),
+            sortTime: start,
+          });
+        }
+
+        // İzinden Dönüş (İznin bitiş tarihinden sonraki gün döner)
+        if (today > end) {
+          const nextDay = new Date(end + 86400000);
+          const nextDayStr = nextDay.toISOString().split("T")[0];
+          items.push({
+            id: `${r.id}-returned`,
+            title: `${name} izinden döndü`,
+            time: relativeTime(nextDayStr + "T09:00:00"),
+            sortTime: nextDay.getTime(),
+          });
+        }
+      }
+    });
+
+    // En yeni aktivite en üstte olacak şekilde sırala ve ilk 5 tanesini al
+    return items
+      .sort((a, b) => b.sortTime - a.sortTime)
+      .slice(0, 5);
+  }, [requests, personnel]);
 
   return (
     <header className="absolute left-64 right-0 top-0 z-30 hidden h-20 items-center justify-between px-10 border-b border-outline-variant/20 bg-transparent md:flex">
-      <div />
+      <div className="font-serif text-base font-bold text-primary">
+        {user ? `Merhaba, ${user.name} 👋` : "Merhaba 👋"}
+      </div>
 
       <div className="flex items-center gap-4">
         {/* Takvim Dropdown */}
@@ -102,29 +153,6 @@ export function TopNav() {
             </Popover.Positioner>
           </Popover.Portal>
         </Popover.Root>
-
-        {/* Settings */}
-        <Menu.Root>
-          <Menu.Trigger aria-label="Settings" className={iconButtonClasses}>
-            <Settings className="size-5" />
-          </Menu.Trigger>
-          <Menu.Portal>
-            <Menu.Positioner sideOffset={12} align="end" className="z-50">
-              <Menu.Popup className={`${popupClasses} w-52`}>
-                {settingsItems.map(({ label, icon: Icon, onClick }) => (
-                  <Menu.Item
-                    key={label}
-                    onClick={onClick}
-                    className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-base text-on-surface outline-none transition-colors data-[highlighted]:bg-black/5 data-[highlighted]:text-primary"
-                  >
-                    <Icon className="size-4" />
-                    {label}
-                  </Menu.Item>
-                ))}
-              </Menu.Popup>
-            </Menu.Positioner>
-          </Menu.Portal>
-        </Menu.Root>
 
         <UserMenu />
       </div>

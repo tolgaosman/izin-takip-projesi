@@ -11,7 +11,7 @@ const popupClasses =
   "glass-panel z-50 rounded-xl p-2 shadow-2xl outline-none transition-all data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0";
 
 const itemClasses =
-  "flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-base text-on-surface outline-none transition-colors data-[highlighted]:bg-white/5 data-[highlighted]:text-accent-cyan";
+  "flex cursor-pointer items-center gap-3 rounded-lg px-3 py-1.5 text-base text-on-surface outline-none transition-colors data-[highlighted]:bg-black/5 data-[highlighted]:text-accent-cyan";
 
 export function UserMenu() {
   const { user, logout } = useAuth();
@@ -36,7 +36,7 @@ export function UserMenu() {
           <Menu.Popup className={`${popupClasses} w-60`}>
             {user ? (
               <>
-                <div className="border-b border-white/10 px-3 py-2">
+                <div className="border-b border-border px-3 pb-2 pt-1">
                   <p className="truncate text-base font-bold text-on-surface">
                     {user.name}
                   </p>
@@ -44,24 +44,24 @@ export function UserMenu() {
                     {user.email}
                   </p>
                 </div>
-                <div className="py-1">
-                  <Menu.Item className="p-0 outline-none">
-                    <Link href="/profile" className={itemClasses}>
-                      <User className="size-4" />
-                      Profil
-                    </Link>
-                  </Menu.Item>
-                  <Menu.Item className="p-0 outline-none">
-                    <Link href="/profile" className={itemClasses}>
-                      <SlidersHorizontal className="size-4" />
-                      Ayarlar
-                    </Link>
-                  </Menu.Item>
-                </div>
-                <Menu.Separator className="my-1 h-px bg-white/10" />
+                <Menu.Item
+                  render={<Link href="/profile" />}
+                  className={itemClasses}
+                >
+                  <User className="size-4" />
+                  Profil
+                </Menu.Item>
+                <Menu.Item
+                  render={<Link href="/profile" />}
+                  className={itemClasses}
+                >
+                  <SlidersHorizontal className="size-4" />
+                  Ayarlar
+                </Menu.Item>
+                <Menu.Separator className="my-1.5 h-px bg-border" />
                 <Menu.Item
                   onClick={logout}
-                  className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-base text-destructive outline-none transition-colors data-[highlighted]:bg-destructive/10"
+                  className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-1.5 text-base text-destructive outline-none transition-colors data-[highlighted]:bg-destructive/10"
                 >
                   <LogOut className="size-4" />
                   Çıkış Yap
