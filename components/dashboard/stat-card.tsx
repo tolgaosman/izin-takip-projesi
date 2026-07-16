@@ -66,7 +66,7 @@ export function StatCard({
 
       <div className="mt-auto flex justify-between items-end">
         <div className="font-sans text-sm text-on-surface-variant">
-          {highlight ? "Pending Approval" : (caption || "Total Personnel")}
+          {highlight ? "Onay Bekleyenler" : (caption || "Toplam Personel")}
         </div>
 
         {action && actionHref && (

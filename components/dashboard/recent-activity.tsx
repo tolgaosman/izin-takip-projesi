@@ -51,7 +51,7 @@ export function RecentActivity() {
   return (
     <div className="glass-panel flex h-[400px] flex-col rounded-xl p-10">
       <div className="mb-6 flex items-center justify-between">
-        <h3 className="font-serif text-2xl font-bold text-primary">Recent Activity</h3>
+        <h3 className="font-serif text-2xl font-bold text-primary">Son Aktiviteler</h3>
         <CardMenu />
       </div>
 

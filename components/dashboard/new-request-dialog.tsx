@@ -19,7 +19,7 @@ export function NewRequestDialog() {
         className="h-auto w-full gap-2 bg-accent-cyan px-4 py-3 text-base font-bold text-white shadow-[0_0_20px_rgba(0,220,229,0.3)] hover:bg-accent-cyan/90"
       >
         <Plus className="size-5" />
-        New Request
+        Yeni Talep
       </Button>
 
       <LeaveDialog open={open} onOpenChange={setOpen} />

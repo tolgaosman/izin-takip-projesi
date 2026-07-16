@@ -1,8 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { Menu } from "@base-ui/react/menu";
 import { Popover } from "@base-ui/react/popover";
-import { Bell, LogOut, Settings, SlidersHorizontal, User } from "lucide-react";
+import { Bell, Calendar, LogOut, Settings, SlidersHorizontal, User, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -42,6 +43,20 @@ export function TopNav() {
       <div />
 
       <div className="flex items-center gap-4">
+        {/* Takvim Dropdown */}
+        <Popover.Root>
+          <Popover.Trigger aria-label="Takvim" className={iconButtonClasses}>
+            <Calendar className="size-5" />
+          </Popover.Trigger>
+          <Popover.Portal>
+            <Popover.Positioner sideOffset={12} align="end" className="z-50">
+              <Popover.Popup className={`${popupClasses} w-72 p-4`}>
+                <MiniCalendar />
+              </Popover.Popup>
+            </Popover.Positioner>
+          </Popover.Portal>
+        </Popover.Root>
+
         {/* Notifications */}
         <Popover.Root>
           <Popover.Trigger aria-label="Notifications" className={iconButtonClasses}>
@@ -114,5 +129,115 @@ export function TopNav() {
         <UserMenu />
       </div>
     </header>
+  );
+}
+
+function MiniCalendar() {
+  const today = new Date();
+  const [date, setDate] = useState(new Date());
+
+  const year = date.getFullYear();
+  const month = date.getMonth();
+
+  const monthNames = [
+    "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
+    "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"
+  ];
+
+  const dayNames = ["Pt", "Sa", "Ça", "Pe", "Cu", "Ct", "Pz"];
+
+  // Days of the month
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  
+  // Day of the week for the first day of the month (0 = Sunday, 1 = Monday...)
+  // We want Pt to be first, so: Pt=0, Sa=1, ..., Pz=6
+  const rawFirstDay = new Date(year, month, 1).getDay();
+  const firstDayIndex = rawFirstDay === 0 ? 6 : rawFirstDay - 1;
+
+  const days = [];
+  // Add empty slots for offset
+  for (let i = 0; i < firstDayIndex; i++) {
+    days.push(null);
+  }
+  // Add day numbers
+  for (let i = 1; i <= daysInMonth; i++) {
+    days.push(i);
+  }
+
+  const prevMonth = () => {
+    setDate(new Date(year, month - 1, 1));
+  };
+
+  const nextMonth = () => {
+    setDate(new Date(year, month + 1, 1));
+  };
+
+  const isToday = (day: number | null) => {
+    if (!day) return false;
+    return (
+      day === today.getDate() &&
+      month === today.getMonth() &&
+      year === today.getFullYear()
+    );
+  };
+
+  return (
+    <div className="font-sans text-on-surface">
+      {/* Month Header */}
+      <div className="flex items-center justify-between mb-3 pb-2 border-b border-outline-variant/20">
+        <button
+          onClick={prevMonth}
+          className="p-1 rounded hover:bg-black/5 transition-colors cursor-pointer"
+        >
+          <ChevronLeft className="size-4" />
+        </button>
+        <span className="font-serif text-sm font-bold text-primary">
+          {monthNames[month]} {year}
+        </span>
+        <button
+          onClick={nextMonth}
+          className="p-1 rounded hover:bg-black/5 transition-colors cursor-pointer"
+        >
+          <ChevronRight className="size-4" />
+        </button>
+      </div>
+
+      {/* Week Day Labels */}
+      <div className="grid grid-cols-7 gap-1 text-center mb-1 text-xs font-mono font-semibold text-on-surface-variant/70">
+        {dayNames.map((name) => (
+          <div key={name} className="py-1">
+            {name}
+          </div>
+        ))}
+      </div>
+
+      {/* Calendar Grid */}
+      <div className="grid grid-cols-7 gap-1 text-center text-xs">
+        {days.map((day, idx) => {
+          if (day === null) {
+            return <div key={`empty-${idx}`} className="py-1.5" />;
+          }
+
+          const isTodayDate = isToday(day);
+
+          return (
+            <div
+              key={`day-${day}`}
+              className="relative flex items-center justify-center py-1.5"
+            >
+              {isTodayDate ? (
+                <span className="flex size-7 items-center justify-center rounded-full bg-destructive text-white font-bold animate-pulse shadow-sm">
+                  {day}
+                </span>
+              ) : (
+                <span className="flex size-7 items-center justify-center rounded-full hover:bg-black/5 text-on-surface-variant font-medium">
+                  {day}
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }

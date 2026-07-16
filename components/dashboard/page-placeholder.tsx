@@ -16,7 +16,7 @@ export function PagePlaceholder({
 
       <div className="glass-panel flex min-h-[400px] flex-col items-center justify-center rounded-xl p-10 text-center">
         <p className="font-label-mono text-xs uppercase tracking-wider text-accent-cyan/70">
-          Coming soon
+          Yapım Aşamasında
         </p>
         <p className="mt-2 max-w-md text-base text-on-surface-variant">
           Bu sayfa henüz hazırlanıyor. İçerik yakında burada olacak.

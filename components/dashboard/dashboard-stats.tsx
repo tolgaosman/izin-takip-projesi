@@ -10,34 +10,34 @@ export function DashboardStats() {
 
   const stats: Stat[] = [
     {
-      label: "GLOBAL FORCE",
+      label: "TOPLAM PERSONEL",
       value: String(totalPersonnel),
       icon: Users,
       accent: "cyan",
-      caption: "Total Personnel",
+      caption: "Kayıtlı Çalışan Sayısı",
     },
     {
-      label: "AWAITING ACTION",
+      label: "BEKLEYEN TALEPLER",
       value: String(pending),
       icon: CalendarClock,
       accent: "cyan",
-      action: "Review Now",
+      action: "Şimdi İncele",
       actionHref: "/leave-requests",
       highlight: true,
     },
     {
-      label: "CONFIRMED ABSENCE",
+      label: "ONAYLANAN İZİNLER",
       value: String(approved),
       icon: CircleCheckBig,
       accent: "violet",
-      caption: "Currently Approved",
+      caption: "Güncel İzinli Sayısı",
     },
     {
-      label: "DECLINED",
+      label: "REDDEDİLEN TALEPLER",
       value: String(rejected),
       icon: CircleX,
       accent: "neutral",
-      caption: "Rejected Requests",
+      caption: "Reddedilen İzin Talepleri",
     },
   ];
 

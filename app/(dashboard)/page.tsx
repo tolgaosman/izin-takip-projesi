@@ -5,13 +5,12 @@ import { RecentActivity } from "@/components/dashboard/recent-activity";
 export default function IzinTakipDashboard() {
   return (
     <>
-      {/* Page header */}
       <div className="mb-12">
         <h2 className="mb-2 font-serif text-5xl font-bold tracking-tight text-primary md:text-6xl">
-          Personnel Overview
+          Personel Genel Bakış
         </h2>
         <p className="max-w-2xl font-sans text-lg text-on-surface-variant">
-          A holistic view of your team&apos;s rest and presence. Manage requests with the intentionality they deserve.
+          Ekibinizin dinlenme ve katılım durumlarına bütünsel bir bakış. İzin taleplerini hak ettikleri özenle yönetin.
         </p>
       </div>
 

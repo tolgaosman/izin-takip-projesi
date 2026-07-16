@@ -15,8 +15,8 @@ type ChartBar = {
 type Dataset = "annual" | "sick";
 
 const MONTH_LABELS = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+  "Oca", "Şub", "Mar", "Nis", "May", "Haz",
+  "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara",
 ];
 
 /** Last 6 months (ending this month) of counts for a leave type. */
@@ -63,7 +63,7 @@ export function LeaveDistributionChart() {
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h3 className="font-serif text-2xl font-bold text-primary">
-            Leave Distribution
+            İzin Dağılımı
           </h3>
           <p className="font-mono text-xs text-on-surface-variant/70 italic">
             Aylık izin kullanım dağılımı
@@ -83,7 +83,7 @@ export function LeaveDistributionChart() {
                   : "border-outline-variant bg-transparent text-on-surface-variant hover:text-primary"
               )}
             >
-              {key === "annual" ? "Annual" : "Sick"}
+              {key === "annual" ? "Yıllık İzin" : "Raporlu"}
             </button>
           ))}
         </div>

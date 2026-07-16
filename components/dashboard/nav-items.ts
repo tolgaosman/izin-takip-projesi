@@ -12,7 +12,7 @@ export type NavItem = {
 };
 
 export const navItems: NavItem[] = [
-  { label: "Dashboard", icon: LayoutDashboard, href: "/" },
-  { label: "Personnel List", icon: Users, href: "/personnel" },
-  { label: "Leave Requests", icon: CalendarDays, href: "/leave-requests" },
+  { label: "Genel Bakış", icon: LayoutDashboard, href: "/" },
+  { label: "Personel Listesi", icon: Users, href: "/personnel" },
+  { label: "İzin Talepleri", icon: CalendarDays, href: "/leave-requests" },
 ];
