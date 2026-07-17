@@ -1,19 +1,54 @@
-/* CSV dışa aktarma yardımcıları.
+/* Excel (xlsx) ve CSV dışa aktarma yardımcıları.
    Tamamen tarayıcı tarafında çalışır (statik export'a uygun, sunucu yok). */
 
-/** Bir CSV kolonu: başlık + her satırdan hücre değerini üreten fonksiyon. */
+import * as XLSX from "xlsx";
+
+/** Bir kolon tanımı: başlık + her satırdan hücre değerini üreten fonksiyon. */
 export type CsvColumn<T> = {
   header: string;
-  /** Satırdan bu kolonun hücre değerini çıkarır (string'e çevrilecek). */
   value: (row: T) => string | number | null | undefined;
 };
 
 /**
- * Tek bir hücreyi CSV kurallarına göre kaçışlar (RFC 4180):
- * içinde virgül, çift tırnak veya satır sonu varsa hücreyi çift tırnağa alır
- * ve içteki tırnakları ikile ("" ). Böylece "Yazılım, Destek" gibi değerler
- * kolonları kaydırmaz.
+ * Satır dizisini gerçek bir .xlsx Excel dosyası olarak indirir.
+ * SheetJS kullanır — tarayıcıda çalışır, sunucu gerektirmez.
  */
+export function downloadXlsx<T>(filename: string, rows: T[], columns: CsvColumn<T>[]): void {
+  if (typeof window === "undefined") return;
+
+  // Başlık satırı + veri satırları
+  const headers = columns.map((c) => c.header);
+  const data = rows.map((row) =>
+    columns.map((c) => {
+      const v = c.value(row);
+      return v == null ? "" : v;
+    })
+  );
+
+  const worksheet = XLSX.utils.aoa_to_sheet([headers, ...data]);
+
+  // Kolon genişliklerini otomatik hesapla
+  const colWidths = columns.map((c, i) => {
+    const maxLen = Math.max(
+      c.header.length,
+      ...rows.map((row) => {
+        const v = c.value(row);
+        return v == null ? 0 : String(v).length;
+      })
+    );
+    return { wch: Math.min(maxLen + 4, 60) };
+  });
+  worksheet["!cols"] = colWidths;
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Veri");
+
+  const name = filename.endsWith(".xlsx") ? filename : `${filename}.xlsx`;
+  XLSX.writeFile(workbook, name);
+}
+
+// --- Geriye dönük uyumluluk: eski CSV fonksiyonları (kaldırılmadı) ---
+
 function escapeCell(value: string | number | null | undefined): string {
   const s = value == null ? "" : String(value);
   if (/[",\n\r]/.test(s)) {
@@ -22,27 +57,16 @@ function escapeCell(value: string | number | null | undefined): string {
   return s;
 }
 
-/**
- * Satır dizisini CSV metnine çevirir.
- * Başında BOM (﻿) vardır: Excel'in dosyayı UTF-8 olarak açmasını sağlar,
- * yoksa Türkçe karakterler (ç, ş, ğ, ı) bozuk görünür.
- */
 export function toCsv<T>(rows: T[], columns: CsvColumn<T>[]): string {
   const header = columns.map((c) => escapeCell(c.header)).join(",");
   const body = rows
     .map((row) => columns.map((c) => escapeCell(c.value(row))).join(","))
     .join("\r\n");
-  return `﻿${header}\r\n${body}`;
+  return `\uFEFF${header}\r\n${body}`;
 }
 
-/**
- * Verilen CSV metnini bir dosya olarak indirir.
- * Blob + geçici object URL + görünmez <a> tıklaması: kullanıcı etkileşimi
- * (buton) içinde çağrıldığında tarayıcı indirmeyi başlatır.
- */
 export function downloadCsv(filename: string, content: string): void {
   if (typeof window === "undefined") return;
-
   const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -51,5 +75,5 @@ export function downloadCsv(filename: string, content: string): void {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  URL.revokeObjectURL(url); // bellek sızıntısını önle
+  URL.revokeObjectURL(url);
 }

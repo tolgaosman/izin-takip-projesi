@@ -3,10 +3,10 @@
 import { Download } from "lucide-react";
 
 import { useToast } from "@/components/ui/toast";
-import { downloadCsv, toCsv, type CsvColumn } from "@/lib/utils/csv";
+import { downloadXlsx, type CsvColumn } from "@/lib/utils/csv";
 import { cn } from "@/lib/utils";
 
-/* Tekrar kullanılabilir CSV "Dışa Aktar" butonu.
+/* Tekrar kullanılabilir Excel "Dışa Aktar" butonu.
    Generic <T>: hangi satır tipini verirsen kolonlar da o tipe göre tiplenir
    (yanlış alan adı derleme zamanında yakalanır). */
 
@@ -32,8 +32,8 @@ export function ExportButton<T>({
       toast.info("Dışa aktarılacak kayıt yok");
       return;
     }
-    downloadCsv(filename, toCsv(rows, columns));
-    toast.success("CSV indirildi", `${rows.length} kayıt aktarıldı.`);
+    downloadXlsx(filename, rows, columns);
+    toast.success("Excel indirildi", `${rows.length} kayıt aktarıldı.`);
   }
 
   return (
