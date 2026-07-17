@@ -3,36 +3,85 @@
 import { useMemo } from "react";
 import { Avatar } from "@/components/dashboard/avatar";
 import { usePersonnel, useLeaveRequests } from "@/lib/data/store";
-import { leaveTypeLabels, leaveDayCount } from "@/lib/data/types";
+import { leaveTypeLabels } from "@/lib/data/types";
+import { workingDayCount } from "@/lib/date/business-days";
+
+/** Bugünün tarihini yerel bileşenlerden "yyyy-mm-dd" üretir (toISOString UTC'ye
+    kaydığı için kullanmıyoruz — bkz. lib/date/business-days.ts). */
+function todayIso(): string {
+  const t = new Date();
+  const m = String(t.getMonth() + 1).padStart(2, "0");
+  const d = String(t.getDate()).padStart(2, "0");
+  return `${t.getFullYear()}-${m}-${d}`;
+}
+
+const fmt = (iso: string) => new Date(iso + "T00:00:00").toLocaleDateString("tr-TR");
 
 export function OnLeaveTable() {
   const allPersonnel = usePersonnel();
   const allRequests = useLeaveRequests();
 
-  const onLeavePersonnel = useMemo(() => {
-    let filtered = allPersonnel.filter((p) => p.status === "on-leave");
+  // Doğrudan onaylı izinlerden hesaplanır (p.status'e bağlı değil) → her zaman
+  // güncel. Bitmemiş (endDate >= bugün) onaylı izinler; kişi başına aktif izni,
+  // yoksa en yakın yaklaşan izni seçilir.
+  const rows = useMemo(() => {
+    const today = todayIso();
+    const personById = new Map(allPersonnel.map((p) => [p.id, p]));
 
-    return filtered.map((p) => {
-      // Find their active leave request (the most recent approved one)
-      const reqs = allRequests
-        .filter((r) => r.personnelId === p.id && r.status === "approved")
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      
-      const req = reqs[0];
-      return {
-        ...p,
-        leaveType: req ? leaveTypeLabels[req.type] : "Bilinmiyor",
-        endDate: req ? new Date(req.endDate).toLocaleDateString("tr-TR") : "-",
-        daysLeft: req ? leaveDayCount(new Date().toISOString().split("T")[0], req.endDate) : 0,
-      };
-    });
+    // personelId → o kişi için seçilen izin
+    const chosen = new Map<
+      string,
+      { leave: (typeof allRequests)[number]; active: boolean }
+    >();
+
+    for (const p of allPersonnel) {
+      const theirs = allRequests
+        .filter(
+          (r) =>
+            r.personnelId === p.id &&
+            r.status === "approved" &&
+            r.endDate >= today
+        )
+        .sort((a, b) => a.startDate.localeCompare(b.startDate));
+      if (theirs.length === 0) continue;
+
+      const active = theirs.find((r) => r.startDate <= today && r.endDate >= today);
+      const pick = active ?? theirs[0]; // theirs sıralı → en yakın yaklaşan
+      chosen.set(p.id, { leave: pick, active: Boolean(active) });
+    }
+
+    return Array.from(chosen.entries())
+      .map(([personnelId, { leave, active }]) => {
+        const person = personById.get(personnelId)!;
+        return {
+          id: person.id,
+          name: person.name,
+          department: person.department,
+          avatarUrl: person.avatarUrl,
+          active,
+          type: leaveTypeLabels[leave.type],
+          note: leave.note?.trim() ? leave.note : "—",
+          startDate: fmt(leave.startDate),
+          endDate: fmt(leave.endDate),
+          rawStart: leave.startDate,
+          daysLeft: workingDayCount(today, leave.endDate),
+        };
+      })
+      // Önce aktif olanlar, sonra başlangıç tarihine göre.
+      .sort((a, b) =>
+        a.active === b.active
+          ? a.rawStart.localeCompare(b.rawStart)
+          : a.active
+          ? -1
+          : 1
+      );
   }, [allPersonnel, allRequests]);
 
-  if (onLeavePersonnel.length === 0) {
+  if (rows.length === 0) {
     return (
       <div className="glass-panel flex min-h-[250px] flex-col items-center justify-center rounded-xl p-10 text-center">
         <p className="font-sans text-base text-on-surface-variant">
-          Şu anda izinde olan personel bulunmuyor.
+          Şu anda izinde olan veya yaklaşan izni bulunan personel yok.
         </p>
       </div>
     );
@@ -42,45 +91,62 @@ export function OnLeaveTable() {
     <div className="glass-panel overflow-hidden rounded-xl">
       <div className="border-b border-outline-variant/30 p-6">
         <h3 className="font-serif text-2xl font-bold text-primary">İzindeki Personeller</h3>
-        <p className="font-mono text-xs text-on-surface-variant/70 italic mt-1">Şu anda aktif olarak izinde olan çalışanlar</p>
+        <p className="font-mono text-xs text-on-surface-variant/70 italic mt-1">
+          Şu anda izinde olan ve yaklaşan izinli çalışanlar
+        </p>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[600px] text-left border-collapse">
+        <table className="w-full min-w-[900px] text-left border-collapse">
           <thead>
             <tr className="border-b border-outline-variant/20 font-mono text-xs uppercase tracking-wider text-on-surface-variant/70">
               <th className="px-6 py-4 font-bold">Personel</th>
-              <th className="px-6 py-4 font-bold">Departman</th>
+              <th className="px-6 py-4 font-bold">Durum</th>
               <th className="px-6 py-4 font-bold">İzin Türü</th>
-              <th className="px-6 py-4 font-bold">Dönüş Tarihi</th>
-              <th className="px-6 py-4 font-bold text-right">Kalan Süre</th>
+              <th className="px-6 py-4 font-bold">Gerekçe</th>
+              <th className="px-6 py-4 font-bold">Başlangıç–Bitiş</th>
+              <th className="px-6 py-4 font-bold text-right">Dönmeye Kalan</th>
             </tr>
           </thead>
           <tbody>
-            {onLeavePersonnel.map((p) => (
+            {rows.map((r) => (
               <tr
-                key={p.id}
+                key={r.id}
                 className="border-b border-outline-variant/10 transition-colors hover:bg-white/40 last:border-0"
               >
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
-                    <Avatar name={p.name} className="size-9 shrink-0" />
-                    <span className="font-bold text-primary">{p.name}</span>
+                    <Avatar name={r.name} url={r.avatarUrl} className="size-9 shrink-0" />
+                    <div>
+                      <div className="font-bold text-primary">{r.name}</div>
+                      <div className="text-xs text-on-surface-variant/70">{r.department}</div>
+                    </div>
                   </div>
                 </td>
-                <td className="px-6 py-4 text-on-surface-variant font-sans text-sm">
-                  {p.department}
+                <td className="px-6 py-4">
+                  <span
+                    className={`inline-flex items-center rounded-full border px-2.5 py-0.5 font-label-mono text-xs ${
+                      r.active
+                        ? "border-accent-violet/30 bg-accent-violet/10 text-accent-violet"
+                        : "border-amber-500/30 bg-amber-500/10 text-amber-600"
+                    }`}
+                  >
+                    {r.active ? "İzinde" : "Yaklaşan"}
+                  </span>
                 </td>
                 <td className="px-6 py-4">
                   <span className="inline-block rounded-full border border-outline-variant/30 px-3 py-1 font-mono text-[10px] font-semibold bg-surface-1 text-accent-cyan uppercase tracking-wider">
-                    {p.leaveType}
+                    {r.type}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-on-surface-variant font-mono text-xs">
-                  {p.endDate}
+                <td className="px-6 py-4 max-w-[220px] truncate text-on-surface-variant font-sans text-sm" title={r.note}>
+                  {r.note}
+                </td>
+                <td className="px-6 py-4 text-on-surface-variant font-mono text-xs whitespace-nowrap">
+                  {r.startDate} – {r.endDate}
                 </td>
                 <td className="px-6 py-4 text-right">
                   <span className="font-bold text-secondary">
-                    {p.daysLeft > 0 ? `${p.daysLeft} gün` : "Bugün dönüyor"}
+                    {r.daysLeft > 0 ? `${r.daysLeft} iş günü` : "Bugün dönüyor"}
                   </span>
                 </td>
               </tr>

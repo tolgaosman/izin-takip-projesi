@@ -7,6 +7,7 @@ const STORAGE_KEY = "izin-takip-auth";
 export type User = {
   name: string;
   email: string;
+  avatarUrl?: string;
 };
 
 /* ── Module-level store (hydration-safe via useSyncExternalStore) ── */

@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Plus, Trash2, Pencil, Eye, Search, ShieldAlert } from "lucide-react";
-import { usePersonnel, useViewRole } from "@/lib/data/store";
+import { usePersonnel } from "@/lib/data/store";
+import { useIsAdmin } from "@/components/auth/role-store";
 import { Personnel, personnelStatusLabels } from "@/lib/data/types";
 import { Avatar } from "@/components/dashboard/avatar";
 import { deletePersonnel } from "@/lib/data/store";
@@ -14,11 +16,17 @@ import Link from "next/link";
 
 export default function PersonnelPage() {
   const personnel = usePersonnel();
-  const viewRole = useViewRole();
+  const isAdmin = useIsAdmin();
+  const router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [toDelete, setToDelete] = useState<Personnel | null>(null);
   const [editing, setEditing] = useState<Personnel | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Çalışan rolü personel listesini göremez → Genel Bakış'a yönlendir.
+  useEffect(() => {
+    if (!isAdmin) router.replace("/");
+  }, [isAdmin, router]);
 
   const filteredPersonnel = useMemo(() => {
     return personnel.filter((p) => {
@@ -32,22 +40,7 @@ export default function PersonnelPage() {
     });
   }, [personnel, searchQuery]);
 
-  // RBAC: Personel Listesi yalnız admin (İK) içindir. Çalışan doğrudan URL ile
-  // gelse bile içeriği göremez.
-  if (viewRole !== "admin") {
-    return (
-      <div className="glass-panel flex min-h-[300px] flex-col items-center justify-center gap-3 rounded-xl p-12 text-center">
-        <ShieldAlert className="size-10 text-on-surface-variant/60" />
-        <h2 className="font-serif text-2xl font-bold text-primary">
-          Bu sayfa yalnız yöneticiler içindir
-        </h2>
-        <p className="max-w-md font-sans text-base text-on-surface-variant">
-          Personel listesini görüntülemek için Admin (İK) yetkisine geçmeniz
-          gerekir. Sağ üstteki görünüm menüsünden değiştirebilirsiniz.
-        </p>
-      </div>
-    );
-  }
+
 
   return (
     <>
@@ -75,16 +68,18 @@ export default function PersonnelPage() {
                 { header: "Başlangıç", value: (p) => p.startDate ?? "" },
               ]}
             />
-            <button
-              onClick={() => {
-                setEditing(null);
-                setDialogOpen(true);
-              }}
-              className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-base font-bold text-white shadow transition-all hover:opacity-90 active:scale-95 cursor-pointer"
-            >
-              <Plus className="size-5" />
-              <span>Yeni Personel</span>
-            </button>
+            {isAdmin && (
+              <button
+                onClick={() => {
+                  setEditing(null);
+                  setDialogOpen(true);
+                }}
+                className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-base font-bold text-white shadow transition-all hover:opacity-90 active:scale-95 cursor-pointer"
+              >
+                <Plus className="size-5" />
+                <span>Yeni Personel</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -96,16 +91,18 @@ export default function PersonnelPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Arama Çubuğu */}
-            <div className="relative max-w-md">
-              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-on-surface-variant/50" />
-              <input
-                type="text"
-                placeholder="Personel adı, departman veya telefon ara..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-lg border border-outline-variant/30 bg-surface-1 py-2 pl-9 pr-4 font-sans text-sm text-on-surface outline-none placeholder:text-on-surface-variant/50 focus:border-accent-cyan"
-              />
+            {/* Arama Çubuğu*/}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="relative w-full max-w-md">
+                <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-on-surface-variant/50" />
+                <input
+                  type="text"
+                  placeholder="Personel adı, departman veya telefon ara..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full rounded-lg border border-outline-variant/30 bg-surface-1 py-2 pl-9 pr-4 font-sans text-sm text-on-surface outline-none placeholder:text-on-surface-variant/50 focus:border-accent-cyan"
+                />
+              </div>
             </div>
 
             {filteredPersonnel.length === 0 ? (
@@ -137,7 +134,7 @@ export default function PersonnelPage() {
                           {/* 1. Sütun: Profil Resmi ve İsim */}
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
-                              <Avatar name={p.name} className="size-9 shrink-0" />
+                              <Avatar name={p.name} url={p.avatarUrl} className="size-9 shrink-0" />
                               <span className="font-bold text-primary">{p.name}</span>
                             </div>
                           </td>
@@ -175,23 +172,27 @@ export default function PersonnelPage() {
                                 <Eye className="size-4" />
                               </Link>
 
-                              <button
-                                onClick={() => {
-                                  setEditing(p);
-                                  setDialogOpen(true);
-                                }}
-                                className="flex size-8 items-center justify-center rounded-lg border border-outline-variant/30 text-on-surface-variant transition-colors hover:bg-white hover:text-primary cursor-pointer"
-                                title="Düzenle"
-                              >
-                                <Pencil className="size-4" />
-                              </button>
-                              <button
-                                onClick={() => setToDelete(p)}
-                                className="flex size-8 items-center justify-center rounded-lg border border-outline-variant/30 text-destructive transition-colors hover:bg-destructive/10 cursor-pointer"
-                                title="Sil"
-                              >
-                                <Trash2 className="size-4" />
-                              </button>
+                              {isAdmin && (
+                                <>
+                                  <button
+                                    onClick={() => {
+                                      setEditing(p);
+                                      setDialogOpen(true);
+                                    }}
+                                    className="flex size-8 items-center justify-center rounded-lg border border-outline-variant/30 text-on-surface-variant transition-colors hover:bg-white hover:text-primary cursor-pointer"
+                                    title="Düzenle"
+                                  >
+                                    <Pencil className="size-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => setToDelete(p)}
+                                    className="flex size-8 items-center justify-center rounded-lg border border-outline-variant/30 text-destructive transition-colors hover:bg-destructive/10 cursor-pointer"
+                                    title="Sil"
+                                  >
+                                    <Trash2 className="size-4" />
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </td>
                         </tr>

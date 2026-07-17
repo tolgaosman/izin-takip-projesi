@@ -32,19 +32,22 @@ export function RecentActivity() {
   const personnel = usePersonnel();
 
   const activities = useMemo(() => {
-    const byId = new Map(personnel.map((p) => [p.id, p.name]));
+    const byId = new Map(personnel.map((p) => [p.id, p]));
+    // Onay/red olayı, oluşturulma değil karar zamanına göre öne çıksın.
+    const eventTime = (r: (typeof requests)[number]) =>
+      r.status === "pending" ? r.createdAt : r.decidedAt ?? r.createdAt;
     return [...requests]
       .sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        (a, b) => new Date(eventTime(b)).getTime() - new Date(eventTime(a)).getTime()
       )
       .slice(0, 8)
       .map((r) => ({
         id: r.id,
-        actor: byId.get(r.personnelId) ?? "Bilinmeyen",
+        actor: byId.get(r.personnelId)?.name ?? "Bilinmeyen",
+        avatarUrl: byId.get(r.personnelId)?.avatarUrl,
         type: r.type,
         status: r.status,
-        time: relativeTime(r.createdAt),
+        time: relativeTime(eventTime(r)),
       }));
   }, [requests, personnel]);
 
@@ -70,6 +73,7 @@ export function RecentActivity() {
             >
               <Avatar
                 name={activity.actor}
+                url={activity.avatarUrl}
                 className="size-10 shrink-0 border border-outline-variant/30"
               />
               <div>

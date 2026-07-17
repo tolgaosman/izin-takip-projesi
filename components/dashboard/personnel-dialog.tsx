@@ -5,6 +5,9 @@ import { X } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Avatar } from "@/components/dashboard/avatar";
+import { ImageCropper } from "@/components/dashboard/image-cropper";
+import { readFile } from "@/lib/image";
 import { addPersonnel, updatePersonnel } from "@/lib/data/store";
 import {
   personnelStatusLabels,
@@ -37,6 +40,8 @@ function PersonnelForm({
   const [department, setDepartment] = useState(personnel?.department ?? "");
   const [phone, setPhone] = useState(personnel?.phone ?? "");
   const [email, setEmail] = useState(personnel?.email ?? "");
+  const [avatarUrl, setAvatarUrl] = useState(personnel?.avatarUrl ?? "");
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [status, setStatus] = useState<PersonnelStatus>(
     personnel?.status ?? "active"
   );
@@ -48,6 +53,7 @@ function PersonnelForm({
       department: department.trim(),
       phone: phone.trim(),
       email: email.trim() || undefined,
+      avatarUrl: avatarUrl.trim() || undefined,
       status,
     };
     if (personnel) {
@@ -57,6 +63,19 @@ function PersonnelForm({
     }
     onClose();
   }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        const imageDataUrl = await readFile(file);
+        setCropSrc(imageDataUrl);
+      } catch (err) {
+        console.error("Resim yüklenirken hata oluştu:", err);
+      }
+      e.target.value = "";
+    }
+  };
 
   return (
     <>
@@ -75,6 +94,25 @@ function PersonnelForm({
         >
           <X className="size-5" />
         </Dialog.Close>
+      </div>
+
+      <div className="mb-6 flex justify-center">
+        <label className="relative cursor-pointer group">
+          <input 
+            type="file" 
+            accept="image/*" 
+            className="hidden" 
+            onChange={handleFileChange} 
+          />
+          <Avatar
+            name={name || "Yeni Personel"}
+            url={avatarUrl}
+            className="size-20 border border-white/10 text-lg group-hover:opacity-80 transition-opacity"
+          />
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+            <span className="text-white text-xs font-bold font-mono">DEĞİŞTİR</span>
+          </div>
+        </label>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -135,6 +173,8 @@ function PersonnelForm({
           />
         </div>
 
+
+
         <div className="space-y-1.5">
           <label htmlFor="p-status" className={labelClasses}>
             Durum
@@ -163,6 +203,18 @@ function PersonnelForm({
           </Button>
         </div>
       </form>
+
+      {cropSrc && (
+        <ImageCropper
+          open={!!cropSrc}
+          imageSrc={cropSrc}
+          onClose={() => setCropSrc(null)}
+          onComplete={(cropped) => {
+            setAvatarUrl(cropped);
+            setCropSrc(null);
+          }}
+        />
+      )}
     </>
   );
 }

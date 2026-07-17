@@ -3,9 +3,6 @@
 
 export type PersonnelStatus = "active" | "on-leave" | "inactive" | "resigned";
 
-/** RBAC simulation role. An "employee" only ever sees their own data;
-    an "admin" (İK) sees everything and can approve/reject requests. */
-export type UserRole = "employee" | "admin";
 
 export type Personnel = {
   id: string;
@@ -17,8 +14,7 @@ export type Personnel = {
   /** Employment start date, ISO (yyyy-mm-dd). Also the seniority source
       used to derive each person's annual leave entitlement. */
   startDate?: string;
-  /** Access level for the RBAC simulation. Defaults to "employee" when absent. */
-  role?: UserRole;
+  avatarUrl?: string;
 };
 
 export type LeaveType = "annual" | "excuse" | "sick" | "unpaid";
@@ -33,9 +29,13 @@ export type LeaveRequest = {
   /** ISO yyyy-mm-dd */
   endDate: string;
   status: LeaveStatus;
+  rejectionReason?: string;
   note?: string;
   /** ISO timestamp of creation, used for activity/sorting */
   createdAt: string;
+  /** ISO timestamp of the last approve/reject decision. Drives "fresh event"
+      ordering in recent activity & notifications; unset while pending. */
+  decidedAt?: string;
 };
 
 /* ── Turkish display labels (single source for the UI) ── */
@@ -60,15 +60,12 @@ export const personnelStatusLabels: Record<PersonnelStatus, string> = {
   resigned: "Ayrıldı",
 };
 
-/** Whole calendar days between two ISO dates, inclusive of both ends.
-    NOTE: counts weekends/holidays too. For the number of days that actually
-    come out of someone's balance, use workingDayCount() in lib/date. */
+import { workingDayCount } from "@/lib/date/business-days";
+
+/** Whole working days between two ISO dates, inclusive of both ends.
+    NOTE: counts business days only (excludes weekends and holidays). */
 export function leaveDayCount(startDate: string, endDate: string): number {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  const ms = end.getTime() - start.getTime();
-  if (Number.isNaN(ms) || ms < 0) return 0;
-  return Math.floor(ms / 86_400_000) + 1;
+  return workingDayCount(startDate, endDate);
 }
 
 /* ── Leave balance ─────────────────────────────────────────────────────

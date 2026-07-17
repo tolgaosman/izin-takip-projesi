@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Plus, Check, X, Trash2, CalendarClock, Search } from "lucide-react";
 
 import {
   useLeaveRequests,
   usePersonnel,
-  useViewRole,
   deleteLeaveRequest,
   setLeaveStatus,
 } from "@/lib/data/store";
@@ -18,9 +18,11 @@ import {
   leaveDayCount,
 } from "@/lib/data/types";
 import { workingDayCount } from "@/lib/date/business-days";
+import { useIsAdmin } from "@/components/auth/role-store";
 
 import { Avatar } from "@/components/dashboard/avatar";
 import { ConfirmDialog } from "@/components/dashboard/confirm-dialog";
+import { RejectDialog } from "@/components/dashboard/reject-dialog";
 import { LeaveDialog } from "@/components/dashboard/leave-dialog";
 import { LeaveStatusBadge } from "@/components/dashboard/badges";
 import { ExportButton } from "@/components/dashboard/export-button";
@@ -32,11 +34,18 @@ const filterSelectClasses =
 export default function LeaveRequestsPage() {
   const requests = useLeaveRequests();
   const personnel = usePersonnel();
-  const viewRole = useViewRole();
+  const isAdmin = useIsAdmin();
+  const router = useRouter();
+
+  // Çalışan rolü bu sayfayı göremez → Genel Bakış'a yönlendir.
+  useEffect(() => {
+    if (!isAdmin) router.replace("/");
+  }, [isAdmin, router]);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<LeaveRequest | null>(null);
   const [toDelete, setToDelete] = useState<LeaveRequest | null>(null);
+  const [toReject, setToReject] = useState<LeaveRequest | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   // Çoklu filtre: her alan bağımsız; "all" o kriteri baypas eder.
   const [filters, setFilters] = useState<{
@@ -104,6 +113,8 @@ export default function LeaveRequestsPage() {
       return true;
     });
   }, [sortedRequests, personnelMap, searchQuery, filters]);
+
+  if (!isAdmin) return null;
 
   return (
     <>
@@ -245,7 +256,9 @@ export default function LeaveRequestsPage() {
                         <th className="px-6 py-4 font-bold">Tarih Aralığı</th>
                         <th className="px-6 py-4 font-bold">Süre</th>
                         <th className="px-6 py-4 font-bold">Durum</th>
-                        <th className="px-6 py-4 text-right font-bold">İşlemler</th>
+                        {isAdmin && (
+                          <th className="px-6 py-4 text-right font-bold">İşlemler</th>
+                        )}
                       </tr>
                     </thead>
                     <tbody>
@@ -261,7 +274,7 @@ export default function LeaveRequestsPage() {
                             {/* Personel Avatarlı Kolon */}
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-3">
-                                <Avatar name={person?.name || "Bilinmeyen"} className="size-8" />
+                                <Avatar name={person?.name || "Bilinmeyen"} url={person?.avatarUrl} className="size-8" />
                                 <div>
                                   <div className="font-bold text-base text-primary">
                                     {person?.name || "Bilinmeyen Personel"}
@@ -293,10 +306,11 @@ export default function LeaveRequestsPage() {
                               <LeaveStatusBadge status={r.status} />
                             </td>
 
-                            {/* İşlemler (Onay/Red/Düzenle/Sil) */}
+                            {/* İşlemler (Onay/Red/Düzenle/Sil) — yalnız admin */}
+                            {isAdmin && (
                             <td className="px-6 py-4 text-right">
                               <div className="flex items-center justify-end gap-2">
-                                {viewRole === "admin" && r.status === "pending" && (
+                                {r.status === "pending" && (
                                   <>
                                     <button
                                       onClick={() => setLeaveStatus(r.id, "approved")}
@@ -306,7 +320,7 @@ export default function LeaveRequestsPage() {
                                       <Check className="size-4" />
                                     </button>
                                     <button
-                                      onClick={() => setLeaveStatus(r.id, "rejected")}
+                                      onClick={() => setToReject(r)}
                                       title="Reddet"
                                       className="flex size-8 items-center justify-center rounded-md border border-red-600/30 bg-red-500/10 text-red-700 hover:bg-red-500/20 active:scale-95 cursor-pointer"
                                     >
@@ -333,6 +347,7 @@ export default function LeaveRequestsPage() {
                                 </button>
                               </div>
                             </td>
+                            )}
                           </tr>
                         );
                       })}
@@ -365,6 +380,17 @@ export default function LeaveRequestsPage() {
           if (toDelete) {
             deleteLeaveRequest(toDelete.id);
             setToDelete(null);
+          }
+        }}
+      />
+
+      <RejectDialog
+        open={toReject !== null}
+        onOpenChange={(o) => !o && setToReject(null)}
+        onConfirm={(reason) => {
+          if (toReject) {
+            setLeaveStatus(toReject.id, "rejected", reason);
+            setToReject(null);
           }
         }}
       />

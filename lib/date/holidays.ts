@@ -21,7 +21,7 @@ export const publicHolidays2026: PublicHoliday[] = [
   { date: "2026-04-23", name: "Ulusal Egemenlik ve Çocuk Bayramı" },
   { date: "2026-05-01", name: "Emek ve Dayanışma Günü" },
   { date: "2026-05-19", name: "Atatürk'ü Anma, Gençlik ve Spor Bayramı" },
-  { date: "2026-07-15", name: "Demokrasi ve Millî Birlik Günü" },
+  { date: "2026-07-20", name: "Barış ve Özgürlük Bayramı" },
   { date: "2026-08-30", name: "Zafer Bayramı" },
   { date: "2026-10-29", name: "Cumhuriyet Bayramı" },
 

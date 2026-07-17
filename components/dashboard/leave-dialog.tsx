@@ -10,9 +10,7 @@ import {
   addLeaveRequest,
   getLeaveBalance,
   updateLeaveRequest,
-  useActingPersonnel,
   usePersonnel,
-  useViewRole,
 } from "@/lib/data/store";
 import {
   leaveStatusLabels,
@@ -41,24 +39,21 @@ const statusOptions = Object.entries(leaveStatusLabels) as [
 function LeaveForm({
   leave,
   defaultPersonnelId,
+  lockPersonnel,
   onClose,
 }: {
   leave: LeaveRequest | null;
   defaultPersonnelId?: string;
+  lockPersonnel?: boolean;
   onClose: () => void;
 }) {
   const personnel = usePersonnel();
-  const viewRole = useViewRole();
-  const actingId = useActingPersonnel();
   const toast = useToast();
   const isEdit = Boolean(leave);
-  // Çalışan modunda talep yalnız kişinin kendi adına açılır → personel kilitli.
-  const isEmployee = viewRole === "employee";
 
   const [personnelId, setPersonnelId] = useState(
     () =>
       leave?.personnelId ??
-      (isEmployee ? actingId ?? "" : "") ??
       defaultPersonnelId ??
       personnel[0]?.id ??
       ""
@@ -130,26 +125,27 @@ function LeaveForm({
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-1.5">
-          <label htmlFor="l-personnel" className={labelClasses}>
-            Personel
-          </label>
-          <select
-            id="l-personnel"
-            required
-            value={personnelId}
-            disabled={isEmployee}
-            onChange={(e) => setPersonnelId(e.target.value)}
-            className={cn(fieldClasses, isEmployee && "cursor-not-allowed opacity-70")}
-          >
-            {personnel.length === 0 && <option value="">Personel yok</option>}
-            {personnel.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name} — {p.department}
-              </option>
-            ))}
-          </select>
-        </div>
+        {!lockPersonnel && (
+          <div className="space-y-1.5">
+            <label htmlFor="l-personnel" className={labelClasses}>
+              Personel
+            </label>
+            <select
+              id="l-personnel"
+              required
+              value={personnelId}
+              onChange={(e) => setPersonnelId(e.target.value)}
+              className={fieldClasses}
+            >
+              {personnel.length === 0 && <option value="">Personel yok</option>}
+              {personnel.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name} — {p.department}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div className="space-y-1.5">
           <label htmlFor="l-type" className={labelClasses}>
@@ -275,6 +271,8 @@ type Props = {
   leave?: LeaveRequest | null;
   /** Pre-select a person (used when adding from a personnel context). */
   defaultPersonnelId?: string;
+  /** Personel seçiciyi gizle ve defaultPersonnelId'ye sabitle (çalışan kendine talep). */
+  lockPersonnel?: boolean;
 };
 
 export function LeaveDialog({
@@ -282,6 +280,7 @@ export function LeaveDialog({
   onOpenChange,
   leave,
   defaultPersonnelId,
+  lockPersonnel,
 }: Props) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -292,6 +291,7 @@ export function LeaveDialog({
             key={leave?.id ?? "new"}
             leave={leave ?? null}
             defaultPersonnelId={defaultPersonnelId}
+            lockPersonnel={lockPersonnel}
             onClose={() => onOpenChange(false)}
           />
         </Dialog.Popup>

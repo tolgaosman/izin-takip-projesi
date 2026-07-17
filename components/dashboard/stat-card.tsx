@@ -20,6 +20,8 @@ export type Stat = {
   actionHref?: string;
   /** applies the glowing highlighted treatment (the "Pending" card) */
   highlight?: boolean;
+  /** override the color of the value text (e.g. 'text-destructive') */
+  valueColor?: string;
 };
 
 export function StatCard({
@@ -31,6 +33,7 @@ export function StatCard({
   action,
   actionHref,
   highlight,
+  valueColor,
 }: Stat) {
   return (
     <div
@@ -57,7 +60,7 @@ export function StatCard({
         <div
           className={cn(
             "font-serif text-5xl font-bold tracking-tight mt-4",
-            highlight ? "text-destructive" : (accent === "cyan" ? "text-primary" : "text-secondary-container")
+            valueColor ? valueColor : highlight ? "text-destructive" : (accent === "cyan" ? "text-primary" : "text-secondary-container")
           )}
         >
           {value.padStart(2, "0")}

@@ -10,35 +10,13 @@ import type {
   LeaveStatus,
   Personnel,
   PersonnelStatus,
-  UserRole,
 } from "@/lib/data/types";
-
-/* ── localStorage-backed reactive store ──────────────────────────────
-   Same hydration-safe pattern as components/auth/auth-provider.tsx:
-   a module-level snapshot synced through useSyncExternalStore.        */
 
 const PERSONNEL_KEY = "izin-takip-personnel";
 const LEAVES_KEY = "izin-takip-leaves";
-const ROLE_KEY = "izin-takip-role";
-const VIEW_ROLE_KEY = "izin-takip-view-role";
-const ACTING_ID_KEY = "izin-takip-acting-id";
 
 let personnel: Personnel[] = seedPersonnel;
 let leaves: LeaveRequest[] = seedLeaveRequests;
-
-export const ROLE_DEPARTMENTS: Record<string, string[]> = {
-  "Admin (Tümü)": [],
-  "Teknoloji": ["Yazılım", "Donanım", "Destek"],
-  "İnsan Kaynakları": ["İnsan Kaynakları"],
-  "Satış ve Pazarlama": ["Satış", "Pazarlama"],
-  "Muhasebe": ["Muhasebe"],
-};
-
-export const AVAILABLE_ROLES = Object.keys(ROLE_DEPARTMENTS);
-
-let activeRole = "Admin (Tümü)";
-let viewRole: UserRole = "admin";
-let actingPersonnelId: string | null = null;
 let initialized = false;
 
 const listeners = new Set<() => void>();
@@ -78,7 +56,6 @@ function syncPersonnelStatuses(silent = false) {
 
   if (changed) {
     personnel = nextPersonnel;
-    if (typeof clearCache === "function") clearCache();
     try {
       window.localStorage.setItem(PERSONNEL_KEY, JSON.stringify(personnel));
     } catch {}
@@ -91,9 +68,6 @@ function ensureInit() {
   initialized = true;
   personnel = readKey(PERSONNEL_KEY, seedPersonnel);
   leaves = readKey(LEAVES_KEY, seedLeaveRequests);
-  activeRole = readKey(ROLE_KEY, "Admin (Tümü)");
-  viewRole = readKey<UserRole>(VIEW_ROLE_KEY, "admin");
-  actingPersonnelId = readKey<string | null>(ACTING_ID_KEY, null);
   syncPersonnelStatuses(true);
 }
 
@@ -114,65 +88,16 @@ function subscribe(callback: () => void) {
   return () => listeners.delete(callback);
 }
 
-let cachedFilteredPersonnel: Personnel[] | null = null;
-let cachedFilteredLeaves: LeaveRequest[] | null = null;
-
-function clearCache() {
-  cachedFilteredPersonnel = null;
-  cachedFilteredLeaves = null;
-}
-
-/* Role-scoped snapshots. In "employee" view, everything is narrowed to the
-   acting person so the whole dashboard/tables personalise for free. Results
-   are cached so useSyncExternalStore gets a referentially-stable array
-   (a fresh .filter() every render would loop). */
-
 function getPersonnelSnapshot(): Personnel[] {
   ensureInit();
-  
-  if (viewRole === "employee") {
-    if (!cachedFilteredPersonnel) {
-      cachedFilteredPersonnel = personnel.filter((p) => p.id === actingPersonnelId);
-    }
-    return cachedFilteredPersonnel;
-  }
-
-  if (activeRole !== "Admin (Tümü)") {
-    if (!cachedFilteredPersonnel) {
-      const allowed = ROLE_DEPARTMENTS[activeRole] || [];
-      cachedFilteredPersonnel = personnel.filter((p) => allowed.includes(p.department));
-    }
-    return cachedFilteredPersonnel;
-  }
-
   return personnel;
 }
 
 function getLeavesSnapshot(): LeaveRequest[] {
   ensureInit();
-
-  if (viewRole === "employee") {
-    if (!cachedFilteredLeaves) {
-      cachedFilteredLeaves = leaves.filter((l) => l.personnelId === actingPersonnelId);
-    }
-    return cachedFilteredLeaves;
-  }
-
-  if (activeRole !== "Admin (Tümü)") {
-    if (!cachedFilteredLeaves) {
-      const allowed = ROLE_DEPARTMENTS[activeRole] || [];
-      const allowedPersonnelIds = new Set(
-        personnel.filter((p) => allowed.includes(p.department)).map((p) => p.id)
-      );
-      cachedFilteredLeaves = leaves.filter((l) => allowedPersonnelIds.has(l.personnelId));
-    }
-    return cachedFilteredLeaves;
-  }
-
   return leaves;
 }
 
-// Server snapshots must be referentially stable across calls.
 function getPersonnelServerSnapshot(): Personnel[] {
   return seedPersonnel;
 }
@@ -182,14 +107,12 @@ function getLeavesServerSnapshot(): LeaveRequest[] {
 
 function setPersonnel(next: Personnel[]) {
   personnel = next;
-  clearCache();
   persist(PERSONNEL_KEY, next);
   emit();
 }
 
 function setLeaves(next: LeaveRequest[]) {
   leaves = next;
-  clearCache();
   persist(LEAVES_KEY, next);
   emit();
   syncPersonnelStatuses(); // Senkronizasyon (personel status update)
@@ -204,85 +127,10 @@ function newId(): string {
 
 /* ── React hooks ── */
 
-export function useRole(): string {
-  return useSyncExternalStore(
-    subscribe,
-    () => {
-      ensureInit();
-      return activeRole;
-    },
-    () => "Admin (Tümü)"
-  );
-}
-
-export function setRole(role: string) {
-  activeRole = role;
-  clearCache();
-  persist(ROLE_KEY, role);
-  emit();
-}
-
-export function useViewRole(): UserRole {
-  return useSyncExternalStore(
-    subscribe,
-    () => {
-      ensureInit();
-      return viewRole;
-    },
-    () => "admin"
-  );
-}
-
-export function useActingPersonnel(): string | null {
-  return useSyncExternalStore(
-    subscribe,
-    () => {
-      ensureInit();
-      return actingPersonnelId;
-    },
-    () => null
-  );
-}
-
-export function setViewRole(role: UserRole) {
-  ensureInit();
-  viewRole = role;
-  // Switching to employee view with nobody selected → default to first person.
-  if (role === "employee" && !actingPersonnelId) {
-    actingPersonnelId = personnel[0]?.id ?? null;
-    persist(ACTING_ID_KEY, actingPersonnelId);
-  }
-  clearCache();
-  persist(VIEW_ROLE_KEY, role);
-  emit();
-}
-
-export function setActingPersonnel(id: string | null) {
-  ensureInit();
-  actingPersonnelId = id;
-  clearCache();
-  persist(ACTING_ID_KEY, id);
-  emit();
-}
-
 export function usePersonnel(): Personnel[] {
   return useSyncExternalStore(
     subscribe,
     getPersonnelSnapshot,
-    getPersonnelServerSnapshot
-  );
-}
-
-/** Tüm personel — view role'den BAĞIMSIZ (filtresiz). Rol değiştirici gibi
-    "çalışan seç" ihtiyacı olan yerler için; usePersonnel() çalışan modunda
-    tek kişiye daraldığından onun yerine bu kullanılır. */
-export function useAllPersonnel(): Personnel[] {
-  return useSyncExternalStore(
-    subscribe,
-    () => {
-      ensureInit();
-      return personnel;
-    },
     getPersonnelServerSnapshot
   );
 }
@@ -314,18 +162,13 @@ export function useDashboardStats(): DashboardStats {
   };
 }
 
-/* ── Leave balance (derived) ──
-   Reactive hook for UI (re-renders when personnel/leaves change). Always
-   computes from the FULL data set (unfiltered by view role) so a person's
-   real remaining balance is correct regardless of who is looking. */
 export function usePersonnelBalance(id: string): LeaveBalance | undefined {
-  // Subscribe to both slices so the memo re-runs on any relevant change.
   usePersonnel();
   useLeaveRequests();
   return useMemo(() => getLeaveBalance(id), [id, personnel, leaves]);
 }
 
-/* ── Non-reactive readers (safe to call in event handlers) ── */
+/* ── Non-reactive readers ── */
 
 export function getPersonnelById(id: string): Personnel | undefined {
   ensureInit();
@@ -337,8 +180,6 @@ export function getLeavesByPersonnel(personnelId: string): LeaveRequest[] {
   return leaves.filter((l) => l.personnelId === personnelId);
 }
 
-/** Non-reactive balance read — for use inside event handlers (e.g. the
-    leave form's submit guard). Uses the full, unfiltered data. */
 export function getLeaveBalance(id: string): LeaveBalance | undefined {
   ensureInit();
   const person = personnel.find((p) => p.id === id);
@@ -363,7 +204,6 @@ export function updatePersonnel(id: string, data: Partial<Omit<Personnel, "id">>
 export function deletePersonnel(id: string) {
   ensureInit();
   setPersonnel(personnel.filter((p) => p.id !== id));
-  // Cascade: drop that person's leave requests too.
   setLeaves(leaves.filter((l) => l.personnelId !== id));
 }
 
@@ -389,7 +229,13 @@ export function updateLeaveRequest(
   data: Partial<Omit<LeaveRequest, "id" | "createdAt">>
 ) {
   ensureInit();
-  setLeaves(leaves.map((l) => (l.id === id ? { ...l, ...data } : l)));
+  // Bir karar (onay/red) her uygulandığında karar zamanını damgala; böylece
+  // son aktiviteler ve bildirimler bu talebi "taze" olay olarak öne çıkarır.
+  const patch =
+    data.status === "approved" || data.status === "rejected"
+      ? { ...data, decidedAt: new Date().toISOString() }
+      : data;
+  setLeaves(leaves.map((l) => (l.id === id ? { ...l, ...patch } : l)));
 }
 
 export function deleteLeaveRequest(id: string) {
@@ -397,6 +243,6 @@ export function deleteLeaveRequest(id: string) {
   setLeaves(leaves.filter((l) => l.id !== id));
 }
 
-export function setLeaveStatus(id: string, status: LeaveStatus) {
-  updateLeaveRequest(id, { status });
+export function setLeaveStatus(id: string, status: LeaveStatus, rejectionReason?: string) {
+  updateLeaveRequest(id, { status, rejectionReason });
 }

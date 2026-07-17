@@ -2,9 +2,10 @@
 
 import { ArrowLeft, Briefcase, CalendarDays, Mail, Phone } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { Suspense, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo } from "react";
 
+import { useIsAdmin } from "@/components/auth/role-store";
 import { Avatar } from "@/components/dashboard/avatar";
 import {
   LeaveStatusBadge,
@@ -25,6 +26,13 @@ function PersonnelDetail() {
   const personnel = usePersonnel();
   const leaves = useLeaveRequests();
   const balance = usePersonnelBalance(id);
+  const isAdmin = useIsAdmin();
+  const router = useRouter();
+
+  // Çalışan rolü başka personelin detayını göremez → Genel Bakış'a yönlendir.
+  useEffect(() => {
+    if (!isAdmin) router.replace("/");
+  }, [isAdmin, router]);
 
   const person = useMemo(
     () => personnel.find((p) => p.id === id),
@@ -37,6 +45,8 @@ function PersonnelDetail() {
         .sort((a, b) => (a.startDate < b.startDate ? 1 : -1)),
     [leaves, id]
   );
+
+  if (!isAdmin) return null;
 
   if (!person) {
     return (
@@ -80,6 +90,7 @@ function PersonnelDetail() {
         <div className="flex flex-wrap items-center gap-5">
           <Avatar
             name={person.name}
+            url={person.avatarUrl}
             className="size-20 border border-white/10 text-lg"
           />
           <div>

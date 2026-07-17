@@ -1,25 +1,8 @@
 import type { Metadata } from "next";
-import { Hanken_Grotesk, Literata, Space_Mono } from "next/font/google";
 import "./globals.css";
 
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { AppToastProvider } from "@/components/ui/toast";
-
-const hankenGrotesk = Hanken_Grotesk({
-  variable: "--font-hanken-grotesk",
-  subsets: ["latin"],
-});
-
-const literata = Literata({
-  variable: "--font-literata",
-  subsets: ["latin"],
-});
-
-const spaceMono = Space_Mono({
-  variable: "--font-space-mono",
-  subsets: ["latin"],
-  weight: ["400", "700"],
-});
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
@@ -44,8 +27,13 @@ export default function RootLayout({
   return (
     <html
       lang="tr"
-      className={`${hankenGrotesk.variable} ${literata.variable} ${spaceMono.variable} h-full antialiased`}
+      className="h-full antialiased ubuntu-light"
     >
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap" rel="stylesheet" />
+      </head>
       <body className="min-h-full flex flex-col">
         <AuthProvider>
           <AppToastProvider>{children}</AppToastProvider>
