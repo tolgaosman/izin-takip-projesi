@@ -13,12 +13,14 @@ import {
 import {
   LeaveRequest,
   LeaveType,
+  attachmentConfig,
   leaveTypeLabels,
   leaveStatusLabels,
   leaveDayCount,
 } from "@/lib/data/types";
 import { workingDayCount } from "@/lib/date/business-days";
 import { useIsAdmin } from "@/components/auth/role-store";
+import { useToast } from "@/components/ui/toast";
 
 import { Avatar } from "@/components/dashboard/avatar";
 import { ConfirmDialog } from "@/components/dashboard/confirm-dialog";
@@ -37,6 +39,7 @@ export default function LeaveRequestsPage() {
   const personnel = usePersonnel();
   const isAdmin = useIsAdmin();
   const router = useRouter();
+  const toast = useToast();
 
   // Çalışan rolü bu sayfayı göremez → Genel Bakış'a yönlendir.
   useEffect(() => {
@@ -292,12 +295,16 @@ export default function LeaveRequestsPage() {
                               <div className="flex items-center gap-2">
                                 <span>{leaveTypeLabels[r.type]}</span>
                                 {r.attachmentUrl && (
-                                  <AttachmentDialog url={r.attachmentUrl} name={r.attachmentName}>
+                                  <AttachmentDialog
+                                    url={r.attachmentUrl}
+                                    name={r.attachmentName}
+                                    label={attachmentConfig[r.type]?.label}
+                                  >
                                     <span
                                       className="inline-flex items-center rounded-md border border-accent-cyan/30 bg-accent-cyan/10 px-2 py-0.5 text-[10px] font-bold text-accent-cyan hover:bg-accent-cyan/20"
-                                      title="Doktor Raporunu Görüntüle"
+                                      title={attachmentConfig[r.type]?.label ?? "Belge"}
                                     >
-                                      Rapor
+                                      {attachmentConfig[r.type]?.buttonLabel ?? "Belge"}
                                     </span>
                                   </AttachmentDialog>
                                 )}
@@ -326,7 +333,10 @@ export default function LeaveRequestsPage() {
                                 {r.status === "pending" && (
                                   <>
                                     <button
-                                      onClick={() => setLeaveStatus(r.id, "approved")}
+                                      onClick={() => {
+                                        setLeaveStatus(r.id, "approved");
+                                        toast.success("Talep onaylandı");
+                                      }}
                                       title="Onayla"
                                       className="flex size-8 items-center justify-center rounded-md border border-green-600/30 bg-green-500/10 text-green-700 hover:bg-green-500/20 active:scale-95 cursor-pointer"
                                     >
@@ -393,6 +403,7 @@ export default function LeaveRequestsPage() {
           if (toDelete) {
             deleteLeaveRequest(toDelete.id);
             setToDelete(null);
+            toast.success("Talep silindi");
           }
         }}
       />
@@ -404,6 +415,7 @@ export default function LeaveRequestsPage() {
           if (toReject) {
             setLeaveStatus(toReject.id, "rejected", reason);
             setToReject(null);
+            toast.error("Talep reddedildi");
           }
         }}
       />

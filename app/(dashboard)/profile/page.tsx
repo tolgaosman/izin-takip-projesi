@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { Avatar } from "@/components/dashboard/avatar";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/toast";
 import { ImageCropper } from "@/components/dashboard/image-cropper";
 import { readFile } from "@/lib/image";
 
@@ -17,6 +18,7 @@ const labelClasses =
 
 export default function ProfilePage() {
   const { user, updateUser } = useAuth();
+  const toast = useToast();
   const [name, setName] = useState(user?.name ?? "");
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl ?? "");
   const [cropSrc, setCropSrc] = useState<string | null>(null);
@@ -32,6 +34,7 @@ export default function ProfilePage() {
     });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+    toast.success("Profil güncellendi");
   }
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { Avatar } from "@/components/dashboard/avatar";
 import { AttachmentDialog } from "@/components/dashboard/attachment-dialog";
 import { usePersonnel, useLeaveRequests } from "@/lib/data/store";
-import { leaveTypeLabels } from "@/lib/data/types";
+import { attachmentConfig, leaveTypeLabels } from "@/lib/data/types";
 import { workingDayCount } from "@/lib/date/business-days";
 
 /** Bugünün tarihini yerel bileşenlerden "yyyy-mm-dd" üretir (toISOString UTC'ye
@@ -61,6 +61,7 @@ export function OnLeaveTable() {
           avatarUrl: person.avatarUrl,
           active,
           type: leaveTypeLabels[leave.type],
+          leaveType: leave.type,
           note: leave.note?.trim() ? leave.note : "—",
           startDate: fmt(leave.startDate),
           endDate: fmt(leave.endDate),
@@ -142,12 +143,16 @@ export function OnLeaveTable() {
                       {r.type}
                     </span>
                     {r.attachmentUrl && (
-                      <AttachmentDialog url={r.attachmentUrl} name={r.attachmentName}>
+                      <AttachmentDialog
+                        url={r.attachmentUrl}
+                        name={r.attachmentName}
+                        label={attachmentConfig[r.leaveType]?.label}
+                      >
                         <span
                           className="inline-flex items-center rounded-md border border-accent-cyan/30 bg-accent-cyan/10 px-2 py-0.5 text-[10px] font-bold text-accent-cyan hover:bg-accent-cyan/20 cursor-pointer"
-                          title="Doktor Raporunu Görüntüle"
+                          title={attachmentConfig[r.leaveType]?.label ?? "Belge"}
                         >
-                          Rapor
+                          {attachmentConfig[r.leaveType]?.buttonLabel ?? "Belge"}
                         </span>
                       </AttachmentDialog>
                     )}

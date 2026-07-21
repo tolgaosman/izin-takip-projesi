@@ -10,16 +10,19 @@ import {
   authLabelClasses,
 } from "@/components/auth/auth-card";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/toast";
 
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
+  const toast = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     login(email, password);
+    toast.success("Giriş yapıldı");
     router.push("/");
   }
 

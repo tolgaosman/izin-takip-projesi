@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/toast";
 import { Avatar } from "@/components/dashboard/avatar";
 import { ImageCropper } from "@/components/dashboard/image-cropper";
 import { readFile } from "@/lib/image";
@@ -36,6 +37,7 @@ function PersonnelForm({
   onClose: () => void;
 }) {
   const isEdit = Boolean(personnel);
+  const toast = useToast();
   const [name, setName] = useState(personnel?.name ?? "");
   const [department, setDepartment] = useState(personnel?.department ?? "");
   const [phone, setPhone] = useState(personnel?.phone ?? "");
@@ -61,6 +63,7 @@ function PersonnelForm({
     } else {
       addPersonnel({ ...data, startDate: new Date().toISOString().slice(0, 10) });
     }
+    toast.success(isEdit ? "Personel güncellendi" : "Personel eklendi");
     onClose();
   }
 

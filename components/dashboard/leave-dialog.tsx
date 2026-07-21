@@ -13,6 +13,7 @@ import {
   usePersonnel,
 } from "@/lib/data/store";
 import {
+  attachmentConfig,
   leaveStatusLabels,
   leaveTypeLabels,
   type LeaveRequest,
@@ -20,6 +21,7 @@ import {
   type LeaveType,
 } from "@/lib/data/types";
 import { workingDayCount } from "@/lib/date/business-days";
+import { readFile } from "@/lib/image";
 import { cn } from "@/lib/utils";
 
 const fieldClasses =
@@ -72,11 +74,11 @@ function LeaveForm({
   const balance =
     type === "annual" && personnelId ? getLeaveBalance(personnelId) : undefined;
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) {
       setAttachmentName(file.name);
-      setAttachmentUrl(URL.createObjectURL(file));
+      setAttachmentUrl(await readFile(file));
     }
   }
 
@@ -246,10 +248,11 @@ function LeaveForm({
             </select>
           </div>
         )}
-        {type === "sick" && (
+        {attachmentConfig[type] && (
           <div className="space-y-1.5">
             <label htmlFor="l-file" className={labelClasses}>
-              Doktor Raporu <span className="text-destructive">*</span>
+              {attachmentConfig[type]!.label}{" "}
+              <span className="text-destructive">*</span>
             </label>
             <input
               id="l-file"

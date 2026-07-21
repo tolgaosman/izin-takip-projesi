@@ -17,6 +17,7 @@ import { useAuth } from "@/components/auth/auth-provider";
 import { Avatar } from "@/components/dashboard/avatar";
 import { LeaveStatusBadge } from "@/components/dashboard/badges";
 import { LeaveDialog } from "@/components/dashboard/leave-dialog";
+import { ViewReasonDialog } from "@/components/dashboard/view-reason-dialog";
 import { StatCard, type Stat } from "@/components/dashboard/stat-card";
 import { useLeaveRequests, usePersonnelBalance } from "@/lib/data/store";
 import { leaveTypeLabels } from "@/lib/data/types";
@@ -282,10 +283,10 @@ export function EmployeeDashboard() {
               <table className="w-full min-w-[520px] text-left">
                 <thead>
                   <tr className="border-b border-outline-variant/20 font-mono text-xs uppercase tracking-wider text-on-surface-variant/70">
-                    <th className="py-3 pr-4 font-bold">İzin Türü</th>
-                    <th className="py-3 pr-4 font-bold">Tarih Aralığı</th>
-                    <th className="py-3 pr-4 font-bold">İş Günü</th>
-                    <th className="py-3 font-bold">Durum</th>
+                    <th className="w-[25%] py-3 pr-4 font-bold">İzin Türü</th>
+                    <th className="w-[30%] py-3 pr-4 font-bold">Tarih Aralığı</th>
+                    <th className="w-[15%] py-3 pr-4 font-bold">İş Günü</th>
+                    <th className="w-[30%] py-3 font-bold">Durum</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -298,8 +299,11 @@ export function EmployeeDashboard() {
                       <td className="py-3 pr-4 font-mono text-xs font-bold text-primary">
                         {workingDayCount(l.startDate, l.endDate)}
                       </td>
-                      <td className="py-3">
+                      <td className="py-3 flex items-center gap-2">
                         <LeaveStatusBadge status={l.status} />
+                        {l.status === "rejected" && l.rejectionReason && (
+                          <ViewReasonDialog reason={l.rejectionReason} />
+                        )}
                       </td>
                     </tr>
                   ))}

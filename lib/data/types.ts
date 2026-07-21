@@ -49,6 +49,14 @@ export const leaveTypeLabels: Record<LeaveType, string> = {
   unpaid: "Ücretsiz İzin",
 };
 
+/** Zorunlu belge isteyen izin türleri: form etiketi + tablo buton metni. */
+export const attachmentConfig: Partial<
+  Record<LeaveType, { label: string; buttonLabel: string }>
+> = {
+  sick: { label: "Doktor Raporu", buttonLabel: "Rapor" },
+  excuse: { label: "Dilekçe", buttonLabel: "Dilekçe" },
+};
+
 export const leaveStatusLabels: Record<LeaveStatus, string> = {
   pending: "Bekliyor",
   approved: "Onaylandı",

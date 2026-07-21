@@ -11,6 +11,7 @@ import { deletePersonnel } from "@/lib/data/store";
 import { ConfirmDialog } from "@/components/dashboard/confirm-dialog";
 import { PersonnelDialog } from "@/components/dashboard/personnel-dialog";
 import { ExportButton } from "@/components/dashboard/export-button";
+import { useToast } from "@/components/ui/toast";
 import Link from "next/link";
 
 
@@ -18,6 +19,7 @@ export default function PersonnelPage() {
   const personnel = usePersonnel();
   const isAdmin = useIsAdmin();
   const router = useRouter();
+  const toast = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [toDelete, setToDelete] = useState<Personnel | null>(null);
   const [editing, setEditing] = useState<Personnel | null>(null);
@@ -223,6 +225,7 @@ export default function PersonnelPage() {
           if (toDelete) {
             deletePersonnel(toDelete.id);
             setToDelete(null);
+            toast.success("Personel silindi");
           }
         }}
       />
