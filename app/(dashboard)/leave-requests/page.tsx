@@ -153,6 +153,10 @@ export default function LeaveRequestsPage() {
                   value: (r) => workingDayCount(r.startDate, r.endDate),
                 },
                 { header: "Durum", value: (r) => leaveStatusLabels[r.status] },
+                {
+                  header: "Reddetme Gerekçesi",
+                  value: (r) => r.rejectionReason ?? "",
+                },
               ]}
             />
             <button

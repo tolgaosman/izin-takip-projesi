@@ -1,16 +1,20 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from "recharts";
 
 import { useLeaveRequests } from "@/lib/data/store";
 import type { LeaveType } from "@/lib/data/types";
 import { cn } from "@/lib/utils";
-
-type ChartBar = {
-  month: string;
-  value: number;
-  color: "cyan" | "violet";
-};
 
 type Dataset = "annual" | "sick";
 
@@ -20,12 +24,12 @@ const MONTH_LABELS = [
 ];
 
 /** Last 6 months (ending this month) of counts for a leave type. */
-function buildBars(
+function buildData(
   requests: { type: LeaveType; startDate: string }[],
   type: LeaveType
-): ChartBar[] {
+) {
   const now = new Date();
-  const bars: ChartBar[] = [];
+  const result: { month: string; value: number }[] = [];
   for (let i = 5; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const value = requests.filter((r) => {
@@ -35,41 +39,119 @@ function buildBars(
         s.getFullYear() === d.getFullYear() && s.getMonth() === d.getMonth()
       );
     }).length;
-    bars.push({
-      month: MONTH_LABELS[d.getMonth()],
-      value,
-      color: i % 2 === 0 ? "cyan" : "violet",
-    });
+    result.push({ month: MONTH_LABELS[d.getMonth()], value });
   }
-  return bars;
+  return result;
+}
+
+/* ── Theme-aware colors ── */
+const LIGHT = {
+  gradStart: "#7b1e2b",
+  gradEnd: "#b84456",
+  gradStartAlt: "#9e5561",
+  gradEndAlt: "#c87a85",
+  grid: "rgba(123, 30, 43, 0.06)",
+  axisText: "#8a6a70",
+  tooltipBg: "rgba(255,255,255,0.95)",
+  tooltipBorder: "rgba(123, 30, 43, 0.12)",
+  tooltipText: "#2a1216",
+  tooltipAccent: "#7b1e2b",
+  cursorFill: "rgba(123,30,43,0.04)",
+};
+
+const DARK = {
+  gradStart: "#ff99a8",
+  gradEnd: "#ff6b81",
+  gradStartAlt: "#ff7088",
+  gradEndAlt: "#e84666",
+  grid: "rgba(255, 255, 255, 0.04)",
+  axisText: "#71717a",
+  tooltipBg: "rgba(39,39,42,0.96)",
+  tooltipBorder: "rgba(255,153,168,0.2)",
+  tooltipText: "#f8f8f2",
+  tooltipAccent: "#ff99a8",
+  cursorFill: "rgba(255,255,255,0.03)",
+};
+
+function useIsDark() {
+  const [dark, setDark] = useState(false);
+  useEffect(() => {
+    const check = () =>
+      setDark(document.documentElement.classList.contains("dark"));
+    check();
+    const obs = new MutationObserver(check);
+    obs.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => obs.disconnect();
+  }, []);
+  return dark;
+}
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+function CustomTooltip({ active, payload, label, colors }: any) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div
+      className="rounded-xl px-4 py-3 backdrop-blur-sm"
+      style={{
+        background: colors.tooltipBg,
+        border: `1px solid ${colors.tooltipBorder}`,
+        boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+      }}
+    >
+      <p
+        className="font-sans text-[11px] font-medium uppercase tracking-wider mb-1"
+        style={{ color: colors.axisText }}
+      >
+        {label}
+      </p>
+      <p
+        className="font-mono text-xl font-bold"
+        style={{ color: colors.tooltipAccent }}
+      >
+        {payload[0].value}
+        <span
+          className="ml-1.5 text-[11px] font-normal"
+          style={{ color: colors.axisText }}
+        >
+          talep
+        </span>
+      </p>
+    </div>
+  );
 }
 
 export function LeaveDistributionChart() {
   const requests = useLeaveRequests();
   const [active, setActive] = useState<Dataset>("annual");
+  const isDark = useIsDark();
+  const c = isDark ? DARK : LIGHT;
 
-  const bars = useMemo(() => buildBars(requests, active), [requests, active]);
-  const axisMax = useMemo(
-    () => Math.max(4, Math.ceil(Math.max(1, ...bars.map((b) => b.value)) / 4) * 4),
-    [bars]
-  );
-  const axisTicks = useMemo(
-    () => [axisMax, (axisMax * 3) / 4, axisMax / 2, axisMax / 4, 0].map(Math.round),
-    [axisMax]
-  );
+  const data = useMemo(() => buildData(requests, active), [requests, active]);
+
+  /* Total for the subtle summary badge */
+  const total = useMemo(() => data.reduce((s, d) => s + d.value, 0), [data]);
 
   return (
     <div className="glass-panel flex h-[400px] flex-col rounded-xl p-10">
-      <div className="mb-8 flex items-center justify-between">
+      {/* Header */}
+      <div className="mb-6 flex items-center justify-between">
         <div>
-          <h3 className="font-serif text-2xl font-bold text-primary">
-            İzin Dağılımı
-          </h3>
-          <p className="font-mono text-xs text-on-surface-variant/70 italic">
-            Aylık izin kullanım dağılımı
+          <div className="flex items-center gap-3">
+            <h3 className="font-serif text-2xl font-bold text-primary">
+              İzin Dağılımı
+            </h3>
+            <span className="inline-flex items-center rounded-full border border-primary/15 bg-primary/5 px-2.5 py-0.5 font-mono text-[11px] font-bold text-primary">
+              {total} toplam
+            </span>
+          </div>
+          <p className="mt-1 font-mono text-xs text-on-surface-variant/60 italic">
+            Son 6 aylık izin kullanım dağılımı
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-1.5 rounded-lg border border-outline-variant/20 bg-surface-2/50 p-1">
           {(["annual", "sick"] as const).map((key) => (
             <button
               key={key}
@@ -77,10 +159,10 @@ export function LeaveDistributionChart() {
               aria-pressed={active === key}
               onClick={() => setActive(key)}
               className={cn(
-                "rounded-full border px-3 py-1 font-mono text-xs capitalize transition-colors cursor-pointer",
+                "rounded-md px-3.5 py-1.5 font-sans text-xs font-semibold transition-all duration-200 cursor-pointer",
                 active === key
-                  ? "border-primary bg-primary text-white"
-                  : "border-outline-variant bg-transparent text-on-surface-variant hover:text-primary"
+                  ? "bg-primary text-white shadow-sm"
+                  : "text-on-surface-variant/70 hover:text-primary hover:bg-primary/5"
               )}
             >
               {key === "annual" ? "Yıllık İzin" : "Raporlu"}
@@ -89,48 +171,73 @@ export function LeaveDistributionChart() {
         </div>
       </div>
 
-      {/* Plot area */}
-      <div className="relative mt-auto flex flex-1 items-end justify-between border-b border-outline-variant/30 px-4 pb-4">
-        {/* Y axis */}
-        <div className="absolute bottom-4 left-0 top-0 flex w-8 flex-col justify-between font-mono text-[10px] text-on-surface-variant/50">
-          {axisTicks.map((tick, i) => (
-            <span key={i}>{tick}</span>
-          ))}
-        </div>
-
-        {/* Grid lines */}
-        <div className="pointer-events-none absolute bottom-4 left-8 right-0 top-0 flex flex-col justify-between">
-          {axisTicks.slice(1).map((_, i) => (
-            <div key={i} className="h-0 w-full border-b border-outline-variant/10" />
-          ))}
-        </div>
-
-        {/* Bars */}
-        <div className="relative z-10 ml-8 flex h-[90%] w-full items-end justify-around">
-          {bars.map(({ month, value, color }, i) => (
-            <div
-              key={`${month}-${i}`}
-              className={cn(
-                "group relative w-8 rounded-t-sm transition-all duration-300 md:w-12",
-                color === "cyan" ? "chart-bar-cyan" : "chart-bar-violet",
-                "dark:!border-t dark:!border-l dark:!border-r dark:!border-[#ff99a8] dark:!bg-[#ff99a8]/30",
-                "dark:after:content-[''] dark:after:absolute dark:after:inset-0 dark:after:opacity-50 dark:after:bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,#ff99a8_5px,#ff99a8_6px)]"
-              )}
-              style={{ height: `${(value / axisMax) * 100}%` }}
+      {/* Recharts bar chart */}
+      <div className="flex-1 min-h-0">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={data}
+            margin={{ top: 4, right: 4, left: -20, bottom: 0 }}
+            barCategoryGap="25%"
+          >
+            <defs>
+              <linearGradient id="barGradPrimary" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={c.gradStart} stopOpacity={0.95} />
+                <stop offset="100%" stopColor={c.gradEnd} stopOpacity={0.7} />
+              </linearGradient>
+              <linearGradient id="barGradAlt" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={c.gradStartAlt} stopOpacity={0.85} />
+                <stop offset="100%" stopColor={c.gradEndAlt} stopOpacity={0.55} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid
+              strokeDasharray="4 4"
+              stroke={c.grid}
+              vertical={false}
+            />
+            <XAxis
+              dataKey="month"
+              axisLine={false}
+              tickLine={false}
+              tick={{
+                fill: c.axisText,
+                fontSize: 11,
+                fontFamily: "Ubuntu, sans-serif",
+                fontWeight: 500,
+              }}
+              dy={10}
+            />
+            <YAxis
+              axisLine={false}
+              tickLine={false}
+              allowDecimals={false}
+              tick={{
+                fill: c.axisText,
+                fontSize: 11,
+                fontFamily: "Ubuntu, sans-serif",
+              }}
+              dx={-4}
+              width={32}
+            />
+            <Tooltip
+              content={<CustomTooltip colors={c} />}
+              cursor={{ fill: c.cursorFill, radius: 6 }}
+            />
+            <Bar
+              dataKey="value"
+              radius={[8, 8, 2, 2]}
+              maxBarSize={44}
+              animationDuration={700}
+              animationEasing="ease-out"
             >
-              <div className="absolute -top-8 left-1/2 -translate-x-1/2 rounded border border-outline-variant/30 bg-surface-1 p-1 font-mono text-[10px] text-on-surface opacity-0 transition-opacity group-hover:opacity-100 shadow-md">
-                {value}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* X axis */}
-      <div className="ml-8 mt-2 flex items-center justify-around font-mono text-[10px] uppercase text-on-surface-variant/70">
-        {bars.map(({ month }, i) => (
-          <span key={`${month}-${i}`}>{month}</span>
-        ))}
+              {data.map((_, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={index % 2 === 0 ? "url(#barGradPrimary)" : "url(#barGradAlt)"}
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
       </div>
     </div>
   );

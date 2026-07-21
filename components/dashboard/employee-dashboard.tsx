@@ -17,6 +17,7 @@ import { useAuth } from "@/components/auth/auth-provider";
 import { Avatar } from "@/components/dashboard/avatar";
 import { LeaveStatusBadge } from "@/components/dashboard/badges";
 import { LeaveDialog } from "@/components/dashboard/leave-dialog";
+import { LeaveUsageGauge } from "@/components/dashboard/leave-usage-gauge";
 import { ViewReasonDialog } from "@/components/dashboard/view-reason-dialog";
 import { StatCard, type Stat } from "@/components/dashboard/stat-card";
 import { useLeaveRequests, usePersonnelBalance } from "@/lib/data/store";
@@ -218,24 +219,12 @@ export function EmployeeDashboard() {
 
       {/* Yıllık kullanım çubuğu + Yaklaşan iznim */}
       <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="glass-panel flex flex-col rounded-xl p-8">
-          <h3 className="font-serif text-2xl font-bold text-primary">Yıllık İzin Kullanımı</h3>
-          <p className="mt-1 font-mono text-xs italic text-on-surface-variant/70">
-            {balance?.used ?? 0} / {balance?.entitled ?? 0} iş günü kullanıldı
-          </p>
-          <div className="mt-6">
-            <div className="h-4 w-full overflow-hidden rounded-full bg-surface-2">
-              <div
-                className="h-full rounded-full bg-accent-cyan transition-all"
-                style={{ width: `${usedPct}%` }}
-              />
-            </div>
-            <div className="mt-2 flex justify-between font-label-mono text-xs text-on-surface-variant">
-              <span>%{usedPct} kullanıldı</span>
-              <span>{balance?.remaining ?? 0} gün kaldı</span>
-            </div>
-          </div>
-        </div>
+        <LeaveUsageGauge
+          used={balance?.used ?? 0}
+          entitled={balance?.entitled ?? 0}
+          remaining={balance?.remaining ?? 0}
+          usedPct={usedPct}
+        />
 
         <div className="glass-panel flex flex-col rounded-xl p-8">
           <div className="mb-4 flex items-center gap-2">
