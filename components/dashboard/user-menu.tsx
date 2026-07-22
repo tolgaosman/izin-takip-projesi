@@ -1,7 +1,7 @@
 "use client";
 
 import { Menu } from "@base-ui/react/menu";
-import { LogIn, LogOut, SlidersHorizontal, User } from "lucide-react";
+import { LogIn, LogOut, User } from "lucide-react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useIsAdmin } from "@/components/auth/role-store";
 import { Avatar } from "@/components/dashboard/avatar";
@@ -52,13 +52,6 @@ export function UserMenu() {
                 >
                   <User className="size-4" />
                   Profil
-                </Menu.Item>
-                <Menu.Item
-                  render={<Link href="/profile" />}
-                  className={itemClasses}
-                >
-                  <SlidersHorizontal className="size-4" />
-                  Ayarlar
                 </Menu.Item>
                 <Menu.Separator className="my-1.5 h-px bg-border" />
                 <Menu.Item

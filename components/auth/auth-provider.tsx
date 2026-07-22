@@ -8,6 +8,19 @@ export type User = {
   name: string;
   email: string;
   avatarUrl?: string;
+  /* ── Kişisel profil alanları (tamamı isteğe bağlı, /profile'dan düzenlenir) ── */
+  /** Ünvan / görev tanımı, ör. "Kıdemli Yazılım Geliştirici" */
+  title?: string;
+  phone?: string;
+  /** ISO yyyy-mm-dd */
+  birthDate?: string;
+  /** Şehir / çalışma konumu */
+  location?: string;
+  /** Kısa "hakkımda" metni */
+  bio?: string;
+  emergencyName?: string;
+  emergencyRelation?: string;
+  emergencyPhone?: string;
 };
 
 /* ── Module-level store (hydration-safe via useSyncExternalStore) ── */
