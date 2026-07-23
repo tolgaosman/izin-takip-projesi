@@ -32,8 +32,17 @@ function readKey<T>(key: string, fallback: T): T {
   return fallback;
 }
 
+const STORE_VERSION_KEY = "izin-takip-version-v2";
+
+function getLocalTodayIso(): string {
+  const t = new Date();
+  const m = String(t.getMonth() + 1).padStart(2, "0");
+  const d = String(t.getDate()).padStart(2, "0");
+  return `${t.getFullYear()}-${m}-${d}`;
+}
+
 function syncPersonnelStatuses(silent = false) {
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = getLocalTodayIso();
   let changed = false;
 
   const nextPersonnel = personnel.map((p) => {
@@ -66,8 +75,40 @@ function syncPersonnelStatuses(silent = false) {
 function ensureInit() {
   if (initialized || typeof window === "undefined") return;
   initialized = true;
-  personnel = readKey(PERSONNEL_KEY, seedPersonnel);
-  leaves = readKey(LEAVES_KEY, seedLeaveRequests);
+
+  try {
+    const version = window.localStorage.getItem(STORE_VERSION_KEY);
+    if (version !== "v2") {
+      personnel = seedPersonnel;
+      leaves = seedLeaveRequests;
+      persist(PERSONNEL_KEY, personnel);
+      persist(LEAVES_KEY, leaves);
+      window.localStorage.setItem(STORE_VERSION_KEY, "v2");
+    } else {
+      personnel = readKey(PERSONNEL_KEY, seedPersonnel);
+      leaves = readKey(LEAVES_KEY, seedLeaveRequests);
+    }
+  } catch {
+    personnel = seedPersonnel;
+    leaves = seedLeaveRequests;
+  }
+
+  // Ensure tolgaosmanfly@gmail.com is present in personnel list
+  const userEmail = "tolgaosmanfly@gmail.com";
+  if (!personnel.some((p) => p.email?.toLowerCase().trim() === userEmail)) {
+    const defaultUser: Personnel = {
+      id: "p-00",
+      name: "Tolga Osman",
+      department: "Yazılım",
+      phone: "0532 000 00 00",
+      status: "active",
+      email: userEmail,
+      startDate: "2023-01-01",
+    };
+    personnel = [defaultUser, ...personnel];
+    persist(PERSONNEL_KEY, personnel);
+  }
+
   syncPersonnelStatuses(true);
 }
 

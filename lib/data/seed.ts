@@ -3,7 +3,17 @@ import type { LeaveRequest, Personnel } from "@/lib/data/types";
 /* First-run sample data so the dashboard and tables aren't empty.
    Written to localStorage once; afterwards the user's own edits win. */
 
+function relIso(daysOffset: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + daysOffset);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 export const seedPersonnel: Personnel[] = [
+  { id: "p-00", name: "Tolga Osman", department: "Yazılım", phone: "0532 000 00 00", status: "active", email: "tolgaosmanfly@gmail.com", startDate: "2023-01-01" },
   { id: "p-01", name: "Ayşe Yılmaz", department: "Yazılım", phone: "0532 111 22 33", status: "active", email: "ayse.yilmaz@sirket.com", startDate: "2021-03-01" },
   { id: "p-02", name: "Mehmet Demir", department: "Yazılım", phone: "0533 222 33 44", status: "on-leave", email: "mehmet.demir@sirket.com", startDate: "2020-06-15" },
   { id: "p-03", name: "Ali Can", department: "Destek", phone: "0534 333 44 55", status: "active", email: "ali.can@sirket.com", startDate: "2022-01-10" },
@@ -17,16 +27,16 @@ export const seedPersonnel: Personnel[] = [
 ];
 
 export const seedLeaveRequests: LeaveRequest[] = [
-  { id: "l-01", personnelId: "p-01", type: "annual", startDate: "2025-07-14", endDate: "2025-07-18", status: "pending", note: "Yaz tatili", createdAt: "2025-07-10T09:00:00.000Z" },
-  { id: "l-02", personnelId: "p-02", type: "sick", startDate: "2025-07-07", endDate: "2025-07-09", status: "approved", createdAt: "2025-07-06T14:30:00.000Z" },
-  { id: "l-03", personnelId: "p-03", type: "annual", startDate: "2025-06-02", endDate: "2025-06-06", status: "approved", note: "Aile ziyareti", createdAt: "2025-05-28T11:15:00.000Z" },
-  { id: "l-04", personnelId: "p-05", type: "unpaid", startDate: "2025-07-21", endDate: "2025-07-25", status: "pending", createdAt: "2025-07-11T08:45:00.000Z" },
-  { id: "l-05", personnelId: "p-04", type: "annual", startDate: "2025-05-12", endDate: "2025-05-16", status: "approved", createdAt: "2025-05-05T10:00:00.000Z" },
-  { id: "l-06", personnelId: "p-06", type: "sick", startDate: "2025-04-03", endDate: "2025-04-04", status: "approved", createdAt: "2025-04-02T16:20:00.000Z" },
-  { id: "l-07", personnelId: "p-08", type: "annual", startDate: "2025-08-04", endDate: "2025-08-15", status: "pending", note: "Uzun tatil", createdAt: "2025-07-12T13:00:00.000Z" },
-  { id: "l-08", personnelId: "p-09", type: "annual", startDate: "2025-07-01", endDate: "2025-07-11", status: "approved", createdAt: "2025-06-20T09:30:00.000Z" },
-  { id: "l-09", personnelId: "p-10", type: "unpaid", startDate: "2025-03-17", endDate: "2025-03-19", status: "rejected", note: "Yoğun dönem", createdAt: "2025-03-10T12:00:00.000Z" },
-  { id: "l-10", personnelId: "p-03", type: "sick", startDate: "2025-02-10", endDate: "2025-02-12", status: "approved", createdAt: "2025-02-09T07:50:00.000Z" },
-  { id: "l-11", personnelId: "p-01", type: "annual", startDate: "2025-01-06", endDate: "2025-01-10", status: "approved", createdAt: "2024-12-28T10:00:00.000Z" },
-  { id: "l-12", personnelId: "p-05", type: "sick", startDate: "2025-06-23", endDate: "2025-06-24", status: "rejected", createdAt: "2025-06-22T15:10:00.000Z" },
+  { id: "l-01", personnelId: "p-00", type: "annual", startDate: relIso(-15), endDate: relIso(-11), status: "approved", note: "Yıllık izin", createdAt: new Date(Date.now() - 20 * 86400000).toISOString() },
+  { id: "l-02", personnelId: "p-02", type: "sick", startDate: relIso(-2), endDate: relIso(2), status: "approved", note: "Grip istirahati", createdAt: new Date(Date.now() - 3 * 86400000).toISOString() },
+  { id: "l-03", personnelId: "p-01", type: "annual", startDate: relIso(5), endDate: relIso(9), status: "approved", note: "Yaz tatili", createdAt: new Date(Date.now() - 5 * 86400000).toISOString() },
+  { id: "l-04", personnelId: "p-00", type: "annual", startDate: relIso(10), endDate: relIso(15), status: "pending", note: "Tatil talebi", createdAt: new Date(Date.now() - 1 * 86400000).toISOString() },
+  { id: "l-05", personnelId: "p-05", type: "unpaid", startDate: relIso(3), endDate: relIso(7), status: "pending", createdAt: new Date(Date.now() - 2 * 86400000).toISOString() },
+  { id: "l-06", personnelId: "p-03", type: "annual", startDate: relIso(-40), endDate: relIso(-35), status: "approved", note: "Aile ziyareti", createdAt: new Date(Date.now() - 45 * 86400000).toISOString() },
+  { id: "l-07", personnelId: "p-04", type: "annual", startDate: relIso(-70), endDate: relIso(-65), status: "approved", createdAt: new Date(Date.now() - 75 * 86400000).toISOString() },
+  { id: "l-08", personnelId: "p-06", type: "sick", startDate: relIso(-100), endDate: relIso(-98), status: "approved", createdAt: new Date(Date.now() - 102 * 86400000).toISOString() },
+  { id: "l-09", personnelId: "p-08", type: "annual", startDate: relIso(12), endDate: relIso(20), status: "pending", note: "Uzun tatil", createdAt: new Date(Date.now() - 4 * 86400000).toISOString() },
+  { id: "l-10", personnelId: "p-09", type: "annual", startDate: relIso(-1), endDate: relIso(5), status: "approved", createdAt: new Date(Date.now() - 7 * 86400000).toISOString() },
+  { id: "l-11", personnelId: "p-10", type: "unpaid", startDate: relIso(-120), endDate: relIso(-118), status: "rejected", note: "Yoğun dönem", createdAt: new Date(Date.now() - 125 * 86400000).toISOString() },
+  { id: "l-12", personnelId: "p-03", type: "sick", startDate: relIso(-150), endDate: relIso(-148), status: "approved", createdAt: new Date(Date.now() - 152 * 86400000).toISOString() },
 ];

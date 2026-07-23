@@ -23,9 +23,11 @@ const MONTH_LABELS = [
   "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara",
 ];
 
+import { parseLocalDate } from "@/lib/date/business-days";
+
 /** Last 6 months (ending this month) of counts for a leave type. */
 function buildData(
-  requests: { type: LeaveType; startDate: string }[],
+  requests: { type: LeaveType; startDate: string; status?: string }[],
   type: LeaveType
 ) {
   const now = new Date();
@@ -34,7 +36,8 @@ function buildData(
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const value = requests.filter((r) => {
       if (r.type !== type) return false;
-      const s = new Date(r.startDate);
+      if (r.status === "rejected") return false;
+      const s = parseLocalDate(r.startDate);
       return (
         s.getFullYear() === d.getFullYear() && s.getMonth() === d.getMonth()
       );
