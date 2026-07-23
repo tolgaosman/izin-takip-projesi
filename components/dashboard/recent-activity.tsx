@@ -52,7 +52,7 @@ export function RecentActivity() {
   }, [requests, personnel]);
 
   return (
-    <div className="glass-panel flex h-[400px] flex-col rounded-xl p-10">
+    <div className="glass-panel flex h-[340px] flex-col rounded-xl p-5 md:h-[400px] md:p-8">
       <div className="mb-6 flex items-center justify-between">
         <h3 className="font-serif text-2xl font-bold text-primary">Son Aktiviteler</h3>
         <CardMenu />

@@ -18,6 +18,7 @@ import { Avatar } from "@/components/dashboard/avatar";
 import { LeaveStatusBadge } from "@/components/dashboard/badges";
 import { LeaveDialog } from "@/components/dashboard/leave-dialog";
 import { LeaveUsageGauge } from "@/components/dashboard/leave-usage-gauge";
+import { MobileCard, MobileCardList } from "@/components/dashboard/mobile-card-list";
 import { ViewReasonDialog } from "@/components/dashboard/view-reason-dialog";
 import { StatCard, type Stat } from "@/components/dashboard/stat-card";
 import { useLeaveRequests, usePersonnelBalance } from "@/lib/data/store";
@@ -68,7 +69,7 @@ function UpcomingHolidays() {
   );
 
   return (
-    <div className="glass-panel flex h-full flex-col rounded-xl p-8">
+    <div className="glass-panel flex h-full flex-col rounded-xl p-5 md:p-8">
       <div className="mb-5 flex items-center gap-2">
         <PartyPopper className="size-5 text-accent-violet" />
         <h3 className="font-serif text-2xl font-bold text-primary">Yaklaşan Resmî Tatiller</h3>
@@ -141,7 +142,7 @@ export function EmployeeDashboard() {
     return (
       <>
         <div className="mb-8">
-          <h2 className="font-serif text-5xl font-bold text-primary">Kişisel Panelim</h2>
+          <h2 className="font-serif text-3xl font-bold text-primary sm:text-4xl lg:text-5xl">Kişisel Panelim</h2>
         </div>
         <div className="mb-8 flex items-start gap-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-6">
           <UserRound className="mt-0.5 size-6 shrink-0 text-amber-600" />
@@ -185,12 +186,12 @@ export function EmployeeDashboard() {
   return (
     <>
       {/* Hero */}
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-outline-variant/20 pb-6">
-        <div className="flex items-center gap-4 pl-4">
-          <Avatar name={me.name} url={user?.avatarUrl || me.avatarUrl} className="size-16 border border-accent-cyan/30 text-lg" />
-          <div>
-            <h2 className="font-serif text-4xl font-bold text-primary">Merhaba, {me.name} 👋</h2>
-            <p className="mt-1 font-sans text-base text-on-surface-variant">
+      <div className="mb-8 flex flex-col items-stretch gap-4 border-b border-outline-variant/20 pb-6 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3 sm:gap-4 sm:pl-4">
+          <Avatar name={me.name} url={user?.avatarUrl || me.avatarUrl} className="size-12 shrink-0 border border-accent-cyan/30 text-lg sm:size-16" />
+          <div className="min-w-0">
+            <h2 className="font-serif text-2xl font-bold text-primary sm:text-3xl lg:text-4xl">Merhaba, {me.name} 👋</h2>
+            <p className="mt-1 font-sans text-sm text-on-surface-variant md:text-base">
               {me.department}
               {years > 0 && <span> · {years} yıllık kıdem</span>}
               <span
@@ -203,7 +204,7 @@ export function EmployeeDashboard() {
         </div>
         <button
           onClick={() => setRequestOpen(true)}
-          className="flex items-center gap-2 rounded-lg bg-accent-cyan px-4 py-2 text-base font-bold text-white dark:text-black shadow transition-all hover:bg-accent-cyan/90 active:scale-95 cursor-pointer"
+          className="flex items-center justify-center gap-2 rounded-lg bg-accent-cyan px-4 py-2 text-base font-bold text-white dark:text-black shadow transition-all hover:bg-accent-cyan/90 active:scale-95 cursor-pointer"
         >
           <CalendarPlus className="size-5" />
           Yeni İzin Talebi
@@ -211,7 +212,7 @@ export function EmployeeDashboard() {
       </div>
 
       {/* İzin bakiyem */}
-      <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 lg:gap-6">
         {balanceStats.map((s) => (
           <StatCard key={s.label} {...s} />
         ))}
@@ -226,7 +227,7 @@ export function EmployeeDashboard() {
           usedPct={usedPct}
         />
 
-        <div className="glass-panel flex flex-col rounded-xl p-8">
+        <div className="glass-panel flex flex-col rounded-xl p-5 md:p-8">
           <div className="mb-4 flex items-center gap-2">
             <Plane className="size-5 text-accent-cyan" />
             <h3 className="font-serif text-2xl font-bold text-primary">Yaklaşan İznim</h3>
@@ -261,14 +262,52 @@ export function EmployeeDashboard() {
 
       {/* Taleplerim + Resmî tatiller */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="glass-panel flex flex-col rounded-xl p-8 lg:col-span-2">
+        <div className="glass-panel flex flex-col rounded-xl p-5 lg:col-span-2 md:p-8">
           <h3 className="mb-5 font-serif text-2xl font-bold text-primary">Taleplerim</h3>
           {sortedMyLeaves.length === 0 ? (
             <p className="font-sans text-sm text-on-surface-variant">
               Henüz izin talebin yok.
             </p>
           ) : (
-            <div className="overflow-x-auto">
+            <>
+            {/* Mobil: kart listesi */}
+            <MobileCardList>
+              {sortedMyLeaves.map((l) => (
+                <MobileCard
+                  key={l.id}
+                  title={leaveTypeLabels[l.type]}
+                  badge={
+                    <span className="inline-flex items-center gap-2">
+                      <LeaveStatusBadge status={l.status} />
+                      {l.status === "rejected" && l.rejectionReason && (
+                        <ViewReasonDialog reason={l.rejectionReason} />
+                      )}
+                    </span>
+                  }
+                  rows={[
+                    {
+                      label: "Tarih",
+                      value: (
+                        <span className="font-mono text-xs">
+                          {fmt(l.startDate)} – {fmt(l.endDate)}
+                        </span>
+                      ),
+                    },
+                    {
+                      label: "İş Günü",
+                      value: (
+                        <span className="font-mono text-xs font-bold text-primary">
+                          {workingDayCount(l.startDate, l.endDate)}
+                        </span>
+                      ),
+                    },
+                  ]}
+                />
+              ))}
+            </MobileCardList>
+
+            {/* Masaüstü: tablo */}
+            <div className="hidden overflow-x-auto md:block">
               <table className="w-full min-w-[520px] text-left">
                 <thead>
                   <tr className="border-b border-outline-variant/20 font-mono text-xs uppercase tracking-wider text-on-surface-variant/70">
@@ -299,6 +338,7 @@ export function EmployeeDashboard() {
                 </tbody>
               </table>
             </div>
+            </>
           )}
         </div>
 

@@ -95,7 +95,7 @@ export function LeaveUsageGauge({
   const milestones = [25, 50, 75];
 
   return (
-    <div className="glass-panel flex flex-col rounded-xl p-8">
+    <div className="glass-panel flex flex-col rounded-xl p-5 md:p-8">
       {/* Header */}
       <div className="flex items-center justify-between mb-1">
         <h3 className="font-serif text-2xl font-bold text-primary">

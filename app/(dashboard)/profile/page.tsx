@@ -209,7 +209,7 @@ function ProfileEditor({ user }: { user: User }) {
           </span>
         </div>
 
-        <div className="px-6 pb-6 md:px-10">
+        <div className="px-4 pb-6 sm:px-6 md:px-10">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:gap-6">
             <label className="group relative -mt-14 shrink-0 cursor-pointer md:-mt-16">
               <input
@@ -268,7 +268,7 @@ function ProfileEditor({ user }: { user: User }) {
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           {/* Kişisel bilgiler */}
-          <section className="glass-panel rounded-xl p-8">
+          <section className="glass-panel rounded-xl p-5 md:p-8">
             <div className="flex items-center gap-2">
               <IdCard className="size-5 text-accent-cyan" />
               <h3 className="font-serif text-2xl font-bold text-primary">
@@ -351,7 +351,7 @@ function ProfileEditor({ user }: { user: User }) {
 
 
           {/* Acil durum iletişimi */}
-          <section className="glass-panel rounded-xl p-8">
+          <section className="glass-panel rounded-xl p-5 md:p-8">
             <div className="flex items-center gap-2">
               <LifeBuoy className="size-5 text-accent-cyan" />
               <h3 className="font-serif text-2xl font-bold text-primary">
@@ -409,7 +409,7 @@ function ProfileEditor({ user }: { user: User }) {
 
 
           {/* Hesap */}
-          <section className="glass-panel rounded-xl p-8">
+          <section className="glass-panel rounded-xl p-5 md:p-8">
             <h3 className="font-serif text-2xl font-bold text-primary">Hesap</h3>
             <p className="mt-1 font-mono text-xs italic text-on-surface-variant/60">
               Bu bilgiler değiştirilemez
@@ -467,7 +467,7 @@ function ProfileEditor({ user }: { user: User }) {
           </section>
 
           {/* Görünüm */}
-          <section className="glass-panel rounded-xl p-8">
+          <section className="glass-panel rounded-xl p-5 md:p-8">
             <h3 className="font-serif text-2xl font-bold text-primary">
               Görünüm
             </h3>

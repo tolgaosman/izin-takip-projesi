@@ -14,7 +14,7 @@ export function PagePlaceholder({
         <p className="max-w-2xl text-base text-on-surface-variant">{subtitle}</p>
       </div>
 
-      <div className="glass-panel flex min-h-[400px] flex-col items-center justify-center rounded-xl p-10 text-center">
+      <div className="glass-panel flex min-h-[280px] flex-col items-center justify-center rounded-xl p-5 text-center md:min-h-[400px] md:p-8">
         <p className="font-label-mono text-xs uppercase tracking-wider text-accent-cyan/70">
           Yapım Aşamasında
         </p>

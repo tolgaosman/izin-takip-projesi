@@ -4,13 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { useIsAdmin } from "@/components/auth/role-store";
-import { navItems } from "@/components/dashboard/nav-items";
+import { isNavItemActive, navItems } from "@/components/dashboard/nav-items";
 import { NewRequestDialog } from "@/components/dashboard/new-request-dialog";
 import { cn } from "@/lib/utils";
-
-function isActive(pathname: string, href: string) {
-  return href === "/" ? pathname === "/" : pathname.startsWith(href);
-}
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -42,7 +38,7 @@ export function Sidebar() {
 
       <div className="flex-1 space-y-4">
         {visibleItems.map(({ label, icon: Icon, href }) => {
-          const active = isActive(pathname, href);
+          const active = isNavItemActive(pathname, href);
           return (
             <Link
               key={label}

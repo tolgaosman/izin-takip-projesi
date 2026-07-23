@@ -38,28 +38,28 @@ export function StatCard({
   return (
     <div
       className={cn(
-        "glass-panel group relative flex h-[240px] flex-col justify-between overflow-hidden rounded-xl p-10 transition-all duration-300 hover:-translate-y-1",
+        "glass-panel group relative flex flex-col justify-between overflow-hidden rounded-xl p-4 transition-all duration-300 hover:-translate-y-1 sm:p-5 md:p-6",
         highlight && "bg-surface-2"
       )}
     >
       {/* Decorative sketchy background element for Global Force card */}
       {accent === "cyan" && !highlight && (
-        <svg className="absolute bottom-0 right-0 opacity-10 pointer-events-none" height="120" viewBox="0 0 100 100" width="120">
+        <svg className="absolute bottom-0 right-0 hidden opacity-10 pointer-events-none sm:block" height="120" viewBox="0 0 100 100" width="120">
           <circle className="text-primary" cx="80" cy="80" fill="none" r="40" stroke="currentColor" strokeWidth="0.5"></circle>
           <circle className="text-primary" cx="80" cy="80" fill="none" r="30" stroke="currentColor" strokeWidth="0.5"></circle>
         </svg>
       )}
 
       <div>
-        <div className="mb-2 flex items-center gap-2 text-secondary">
-          <Icon className="size-4 opacity-75" />
-          <span className="font-mono text-xs uppercase tracking-widest">
+        <div className="mb-2 flex items-start gap-2 text-secondary">
+          <Icon className="mt-0.5 size-4 shrink-0 opacity-75" />
+          <span className="font-mono text-[11px] uppercase leading-tight tracking-widest sm:text-xs">
             {label}
           </span>
         </div>
         <div
           className={cn(
-            "font-serif text-5xl font-bold tracking-tight mt-4",
+            "font-serif text-3xl font-bold tracking-tight mt-2 md:text-4xl",
             valueColor ? valueColor : highlight ? "text-destructive" : (accent === "cyan" ? "text-primary" : "text-secondary-container")
           )}
         >
@@ -67,8 +67,8 @@ export function StatCard({
         </div>
       </div>
 
-      <div className="mt-auto flex justify-between items-end">
-        <div className="font-sans text-sm text-on-surface-variant">
+      <div className="mt-3 flex flex-wrap items-end justify-between gap-x-2 gap-y-1">
+        <div className="font-sans text-xs text-on-surface-variant md:text-sm">
           {highlight ? "Onay Bekleyenler" : (caption || "Toplam Personel")}
         </div>
 

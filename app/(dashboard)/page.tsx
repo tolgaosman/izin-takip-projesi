@@ -15,11 +15,11 @@ export default function IzinTakipDashboard() {
 
   return (
     <>
-      <div className="mb-12">
-        <h2 className="font-serif text-5xl font-bold text-primary">
+      <div className="mb-8 md:mb-12">
+        <h2 className="font-serif text-3xl font-bold text-primary sm:text-4xl lg:text-5xl">
           Personel Genel Bakış
         </h2>
-        <p className="font-sans text-base text-on-surface-variant mt-2">
+        <p className="font-sans text-sm text-on-surface-variant mt-2 md:text-base">
           Ekibinizin dinlenme ve katılım durumlarına bütünsel bir bakış. İzin taleplerini hak ettikleri özenle yönetin.
         </p>
       </div>

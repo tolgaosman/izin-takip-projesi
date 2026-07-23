@@ -1,6 +1,7 @@
 "use client";
 
 import { useIsAdmin } from "@/components/auth/role-store";
+import { MobileTopBar } from "@/components/dashboard/mobile-nav";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { TopNav } from "@/components/dashboard/top-nav";
 import { cn } from "@/lib/utils";
@@ -20,11 +21,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       </div>
 
       {isAdmin && <Sidebar />}
+      <MobileTopBar />
       <TopNav />
 
       <main
         className={cn(
-          "relative z-10 min-h-screen px-4 pb-10 pt-24 md:px-10 md:pt-32",
+          "relative z-10 min-h-screen px-3 pb-10 pt-20 sm:px-4 md:px-10 md:pt-32",
           isAdmin && "md:ml-64"
         )}
       >

@@ -135,9 +135,9 @@ export function LeaveDistributionChart() {
   const total = useMemo(() => data.reduce((s, d) => s + d.value, 0), [data]);
 
   return (
-    <div className="glass-panel flex h-[400px] flex-col rounded-xl p-10">
+    <div className="glass-panel flex h-[340px] flex-col rounded-xl p-5 md:h-[400px] md:p-8">
       {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-4 flex flex-col items-start gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-3">
             <h3 className="font-serif text-2xl font-bold text-primary">

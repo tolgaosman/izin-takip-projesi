@@ -51,7 +51,7 @@ export function ImageCropper({
             </Dialog.Description>
           </div>
           
-          <div className="relative w-full h-[400px] bg-black">
+          <div className="relative h-[280px] w-full bg-black sm:h-[400px]">
             <Cropper
               image={imageSrc}
               crop={crop}

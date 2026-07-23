@@ -56,7 +56,7 @@ export default function CalendarPage() {
 
     // Boş günler
     for (let i = 0; i < startOffset; i++) {
-      cells.push(<div key={`empty-${i}`} className="min-h-[120px] rounded-xl bg-surface-1/50 border border-outline-variant/10"></div>);
+      cells.push(<div key={`empty-${i}`} className="min-h-[56px] rounded-lg border border-outline-variant/10 bg-surface-1/50 sm:min-h-[96px] sm:rounded-xl lg:min-h-[120px]"></div>);
     }
 
     // Ayın günleri
@@ -83,10 +83,17 @@ export default function CalendarPage() {
 
       const cellContent = (
         <>
-          <div className={`font-mono text-sm font-bold ${isWeekend ? "text-on-surface-variant/50" : "text-primary"}`}>
-            {day}
+          <div className={`flex items-center justify-between gap-1 font-mono text-xs font-bold sm:text-sm ${isWeekend ? "text-on-surface-variant/50" : "text-primary"}`}>
+            <span>{day}</span>
+            {/* Mobilde isim çipleri sığmadığı için yalnızca sayı rozeti gösterilir;
+                detay hücreye dokununca CalendarDayDialog'da açılır. */}
+            {hasLeave && (
+              <span className="inline-flex size-4 items-center justify-center rounded-full bg-accent-cyan/15 text-[10px] font-bold text-accent-cyan sm:hidden">
+                {entries.length}
+              </span>
+            )}
           </div>
-          <div className="mt-2 flex flex-col gap-1">
+          <div className="mt-2 hidden flex-col gap-1 sm:flex">
             {entries.map(({ leave, person }, idx) => (
               <div
                 key={`${leave.id}-${idx}`}
@@ -106,7 +113,8 @@ export default function CalendarPage() {
         </>
       );
 
-      const baseCell = "min-h-[120px] rounded-xl border p-2 text-left transition-colors";
+      const baseCell =
+        "min-h-[56px] rounded-lg border p-1 text-left transition-colors sm:min-h-[96px] sm:rounded-xl sm:p-2 lg:min-h-[120px]";
 
       cells.push(
         hasLeave ? (
@@ -142,9 +150,9 @@ export default function CalendarPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-wrap items-end justify-between gap-4 border-b border-outline-variant/20 pb-6">
+      <div className="flex flex-col items-stretch gap-4 border-b border-outline-variant/20 pb-6 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
         <div>
-          <h2 className="font-serif text-5xl font-bold text-primary">
+          <h2 className="font-serif text-3xl font-bold text-primary sm:text-4xl lg:text-5xl">
             İzin Takvimi
           </h2>
           <p className="font-sans text-base text-on-surface-variant mt-2">
@@ -161,11 +169,11 @@ export default function CalendarPage() {
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-4 bg-surface-1 rounded-full px-4 py-2 border border-outline-variant/30 shadow-sm">
+        <div className="flex w-full items-center justify-between gap-2 rounded-full border border-outline-variant/30 bg-surface-1 px-3 py-2 shadow-sm sm:w-auto sm:justify-start sm:gap-4 sm:px-4">
           <button onClick={prevMonth} className="p-2 hover:bg-black/5 rounded-full cursor-pointer transition-colors text-on-surface-variant">
             <ChevronLeft className="size-5" />
           </button>
-          <div className="font-serif text-lg font-bold w-40 text-center text-primary">
+          <div className="w-32 text-center font-serif text-base font-bold text-primary sm:w-40 sm:text-lg">
             {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
           </div>
           <button onClick={nextMonth} className="p-2 hover:bg-black/5 rounded-full cursor-pointer transition-colors text-on-surface-variant">
@@ -174,18 +182,16 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      <div className="glass-panel p-6 rounded-2xl overflow-x-auto custom-scrollbar">
-        <div className="min-w-[800px]">
-          <div className="grid grid-cols-7 gap-4 mb-4">
-            {["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"].map((day, idx) => (
-              <div key={day} className={`text-center font-bold text-sm ${idx >= 5 ? "text-on-surface-variant/50" : "text-on-surface-variant"}`}>
-                {day}
-              </div>
-            ))}
-          </div>
-          <div className="grid grid-cols-7 gap-4">
-            {renderCells()}
-          </div>
+      <div className="glass-panel rounded-2xl p-3 sm:p-6">
+        <div className="mb-2 grid grid-cols-7 gap-1 sm:mb-4 sm:gap-2 lg:gap-4">
+          {["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"].map((day, idx) => (
+            <div key={day} className={`text-center text-[10px] font-bold sm:text-sm ${idx >= 5 ? "text-on-surface-variant/50" : "text-on-surface-variant"}`}>
+              {day}
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-1 sm:gap-2 lg:gap-4">
+          {renderCells()}
         </div>
       </div>
 

@@ -11,6 +11,7 @@ import {
   LeaveStatusBadge,
   PersonnelStatusBadge,
 } from "@/components/dashboard/badges";
+import { MobileCard, MobileCardList } from "@/components/dashboard/mobile-card-list";
 import { usePersonnel, useLeaveRequests, usePersonnelBalance } from "@/lib/data/store";
 import { leaveTypeLabels } from "@/lib/data/types";
 import { workingDayCount } from "@/lib/date/business-days";
@@ -86,15 +87,15 @@ function PersonnelDetail() {
       </Link>
 
       {/* Header / info card */}
-      <div className="glass-panel mb-6 rounded-xl p-8">
-        <div className="flex flex-wrap items-center gap-5">
+      <div className="glass-panel mb-6 rounded-xl p-5 md:p-8">
+        <div className="flex flex-wrap items-center gap-4 sm:gap-5">
           <Avatar
             name={person.name}
             url={person.avatarUrl}
-            className="size-20 border border-white/10 text-lg"
+            className="size-14 shrink-0 border border-white/10 text-lg sm:size-20"
           />
-          <div>
-            <h2 className="text-4xl font-bold tracking-tight text-on-surface">
+          <div className="min-w-0">
+            <h2 className="text-2xl font-bold tracking-tight text-on-surface sm:text-3xl lg:text-4xl">
               {person.name}
             </h2>
             <div className="mt-2">
@@ -103,7 +104,7 @@ function PersonnelDetail() {
           </div>
         </div>
 
-        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-6 grid grid-cols-1 gap-3 sm:mt-8 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
           {infoRows.map(({ icon: Icon, label, value }) => (
             <div
               key={label}
@@ -121,7 +122,7 @@ function PersonnelDetail() {
 
       {/* Yıllık izin bakiyesi kartları (kıdemden türetilir) */}
       {balance && (
-        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="mb-6 grid grid-cols-3 gap-2 sm:gap-4">
           {[
             {
               label: "Hak Edilen",
@@ -142,11 +143,11 @@ function PersonnelDetail() {
               hint: "Kullanılabilir bakiye",
             },
           ].map((card) => (
-            <div key={card.label} className="glass-panel rounded-xl p-6">
-              <p className="font-label-mono text-xs uppercase tracking-wider text-on-surface-variant">
+            <div key={card.label} className="glass-panel rounded-xl p-3 sm:p-6">
+              <p className="font-label-mono text-[10px] uppercase leading-tight tracking-wider text-on-surface-variant sm:text-xs">
                 {card.label}
               </p>
-              <p className={`mt-1 font-serif text-4xl font-bold ${card.accent}`}>
+              <p className={`mt-1 font-serif text-2xl font-bold sm:text-3xl lg:text-4xl ${card.accent}`}>
                 {card.value}
                 <span className="ml-1 text-base font-normal text-on-surface-variant">
                   gün
@@ -160,8 +161,8 @@ function PersonnelDetail() {
 
       {/* Leave history */}
       <div className="glass-panel overflow-hidden rounded-xl">
-        <div className="border-b border-white/10 px-6 py-5">
-          <h3 className="text-2xl font-bold text-on-surface">
+        <div className="border-b border-white/10 px-4 py-4 sm:px-6 sm:py-5">
+          <h3 className="text-xl font-bold text-on-surface sm:text-2xl">
             Kullandığı İzinler
           </h3>
           <p className="font-label-mono text-xs text-on-surface-variant/70">
@@ -174,7 +175,32 @@ function PersonnelDetail() {
             Bu personelin izin kaydı yok.
           </p>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          {/* Mobil: kart listesi */}
+          <MobileCardList className="p-4">
+            {personLeaves.map((l) => (
+              <MobileCard
+                key={l.id}
+                title={leaveTypeLabels[l.type]}
+                badge={<LeaveStatusBadge status={l.status} />}
+                rows={[
+                  { label: "Başlangıç", value: formatDate(l.startDate) },
+                  { label: "Bitiş", value: formatDate(l.endDate) },
+                  {
+                    label: "Gün",
+                    value: (
+                      <span className="font-label-mono">
+                        {workingDayCount(l.startDate, l.endDate)}
+                      </span>
+                    ),
+                  },
+                ]}
+              />
+            ))}
+          </MobileCardList>
+
+          {/* Masaüstü: tablo */}
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[560px] text-left">
               <thead>
                 <tr className="border-b border-white/10 font-label-mono text-xs uppercase tracking-wider text-on-surface-variant">
@@ -211,6 +237,7 @@ function PersonnelDetail() {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
     </>

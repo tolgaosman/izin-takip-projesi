@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { Avatar } from "@/components/dashboard/avatar";
 import { AttachmentDialog } from "@/components/dashboard/attachment-dialog";
+import { MobileCard, MobileCardList } from "@/components/dashboard/mobile-card-list";
 import { usePersonnel, useLeaveRequests } from "@/lib/data/store";
 import { attachmentConfig, leaveTypeLabels } from "@/lib/data/types";
 import { workingDayCount } from "@/lib/date/business-days";
@@ -83,7 +84,7 @@ export function OnLeaveTable() {
 
   if (rows.length === 0) {
     return (
-      <div className="glass-panel flex min-h-[250px] flex-col items-center justify-center rounded-xl p-10 text-center">
+      <div className="glass-panel flex min-h-[180px] flex-col items-center justify-center rounded-xl p-5 text-center md:min-h-[250px] md:p-8">
         <p className="font-sans text-base text-on-surface-variant">
           Şu anda izinde olan veya yaklaşan izni bulunan personel yok.
         </p>
@@ -93,13 +94,77 @@ export function OnLeaveTable() {
 
   return (
     <div className="glass-panel overflow-hidden rounded-xl">
-      <div className="border-b border-outline-variant/30 p-6">
+      <div className="border-b border-outline-variant/30 p-4 md:p-6">
         <h3 className="font-serif text-2xl font-bold text-primary">İzindeki Personeller</h3>
         <p className="font-mono text-xs text-on-surface-variant/70 italic mt-1">
           Şu anda izinde olan ve yaklaşan izinli çalışanlar
         </p>
       </div>
-      <div className="overflow-x-auto">
+      {/* Mobil: kart listesi */}
+      <MobileCardList className="p-4">
+        {rows.map((r) => (
+          <MobileCard
+            key={r.id}
+            leading={<Avatar name={r.name} url={r.avatarUrl} className="size-10 shrink-0" />}
+            title={r.name}
+            subtitle={r.department}
+            badge={
+              <span
+                className={`inline-flex items-center rounded-full border px-2.5 py-0.5 font-label-mono text-xs ${
+                  r.active
+                    ? "border-accent-violet/30 bg-accent-violet/10 text-accent-violet"
+                    : "border-amber-500/30 bg-amber-500/10 text-amber-600"
+                }`}
+              >
+                {r.active ? "İzinde" : "Yaklaşan"}
+              </span>
+            }
+            rows={[
+              {
+                label: "İzin Türü",
+                value: (
+                  <span className="inline-flex items-center gap-2">
+                    <span className="inline-block rounded-full border border-outline-variant/30 bg-surface-1 px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-wider text-accent-cyan">
+                      {r.type}
+                    </span>
+                    {r.attachmentUrl && (
+                      <AttachmentDialog
+                        url={r.attachmentUrl}
+                        name={r.attachmentName}
+                        label={attachmentConfig[r.leaveType]?.label}
+                      >
+                        <span className="inline-flex items-center rounded-md border border-accent-cyan/30 bg-accent-cyan/10 px-2 py-0.5 text-[10px] font-bold text-accent-cyan">
+                          {attachmentConfig[r.leaveType]?.buttonLabel ?? "Belge"}
+                        </span>
+                      </AttachmentDialog>
+                    )}
+                  </span>
+                ),
+              },
+              { label: "Gerekçe", value: r.note },
+              {
+                label: "Tarih",
+                value: (
+                  <span className="font-mono text-xs">
+                    {r.startDate} – {r.endDate}
+                  </span>
+                ),
+              },
+              {
+                label: "Dönmeye Kalan",
+                value: (
+                  <span className="font-bold text-secondary">
+                    {r.daysLeft > 0 ? `${r.daysLeft} iş günü` : "Bugün dönüyor"}
+                  </span>
+                ),
+              },
+            ]}
+          />
+        ))}
+      </MobileCardList>
+
+      {/* Masaüstü: tablo */}
+      <div className="hidden overflow-x-auto md:block">
         <table className="w-full min-w-[900px] text-left border-collapse">
           <thead>
             <tr className="border-b border-outline-variant/20 font-mono text-xs uppercase tracking-wider text-on-surface-variant/70">

@@ -29,10 +29,11 @@ import { LeaveDialog } from "@/components/dashboard/leave-dialog";
 import { AttachmentDialog } from "@/components/dashboard/attachment-dialog";
 import { LeaveStatusBadge } from "@/components/dashboard/badges";
 import { ExportButton } from "@/components/dashboard/export-button";
+import { MobileCard, MobileCardList } from "@/components/dashboard/mobile-card-list";
 
 
 const filterSelectClasses =
-  "rounded-lg border border-outline-variant/30 bg-surface-1 px-3 py-2 font-sans text-sm text-on-surface outline-none transition-colors focus:border-accent-cyan cursor-pointer";
+  "w-full min-w-0 rounded-lg border border-outline-variant/30 bg-surface-1 px-3 py-2 font-sans text-sm text-on-surface outline-none transition-colors focus:border-accent-cyan cursor-pointer sm:w-auto";
 
 export default function LeaveRequestsPage() {
   const requests = useLeaveRequests();
@@ -123,17 +124,18 @@ export default function LeaveRequestsPage() {
   return (
     <>
       <div className="space-y-8">
-        <div className="flex flex-wrap items-end justify-between gap-4 border-b border-outline-variant/20 pb-6">
+        <div className="flex flex-col items-stretch gap-4 border-b border-outline-variant/20 pb-6 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
           <div>
-            <h2 className="font-serif text-5xl font-bold text-primary">
+            <h2 className="font-serif text-3xl font-bold text-primary sm:text-4xl lg:text-5xl">
               İzin Talepleri
             </h2>
-            <p className="font-sans text-base text-on-surface-variant mt-2">
+            <p className="font-sans text-sm text-on-surface-variant mt-2 md:text-base">
               Tüm personel izin talepleri, onay durumları ve izin süreleri.
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex w-full items-center gap-2 sm:w-auto sm:gap-3">
             <ExportButton
+              className="flex-1 justify-center sm:flex-none"
               filename="izin-talepleri"
               rows={filteredRequests}
               columns={[
@@ -164,7 +166,7 @@ export default function LeaveRequestsPage() {
                 setEditing(null);
                 setDialogOpen(true);
               }}
-              className="flex items-center gap-2 rounded-lg bg-accent-cyan px-4 py-2 text-base font-bold text-white dark:text-black shadow transition-all hover:opacity-90 active:scale-95 cursor-pointer"
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-accent-cyan px-4 py-2 text-base font-bold text-white dark:text-black shadow transition-all hover:opacity-90 active:scale-95 cursor-pointer sm:flex-none"
             >
               <Plus className="size-5" />
               <span>Yeni İzin Talebi</span>
@@ -173,7 +175,7 @@ export default function LeaveRequestsPage() {
         </div>
 
         {requests.length === 0 ? (
-          <div className="flex min-h-[300px] flex-col items-center justify-center text-center p-12 glass-panel rounded-xl my-6">
+          <div className="flex min-h-[200px] flex-col items-center justify-center text-center p-6 glass-panel rounded-xl my-6 md:min-h-[300px] md:p-12">
             <p className="font-sans text-lg text-on-surface-variant max-w-md">
               Sistemde henüz izin talebi bulunamadı. Listeyi oluşturmak için sağ üstteki &quot;Yeni İzin Talebi&quot; butonuna tıklayınız.
             </p>
@@ -181,8 +183,8 @@ export default function LeaveRequestsPage() {
         ) : (
           <div className="space-y-4">
             {/* Arama + Çoklu Filtreler */}
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="relative min-w-[240px] flex-1 md:max-w-md">
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
+              <div className="relative col-span-2 w-full sm:min-w-[240px] sm:flex-1 md:max-w-md">
                 <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-on-surface-variant/50" />
                 <input
                   type="text"
@@ -248,13 +250,123 @@ export default function LeaveRequestsPage() {
             </div>
 
             {filteredRequests.length === 0 ? (
-              <div className="flex min-h-[200px] flex-col items-center justify-center text-center p-8 glass-panel rounded-xl">
+              <div className="flex min-h-[160px] flex-col items-center justify-center text-center p-5 glass-panel rounded-xl md:min-h-[200px] md:p-8">
                 <p className="font-sans text-base text-on-surface-variant">
                   Arama kriterlerinize uygun izin talebi bulunamadı.
                 </p>
               </div>
             ) : (
-              <div className="glass-panel overflow-hidden rounded-xl">
+              <>
+              {/* Mobil: kart listesi */}
+              <MobileCardList>
+                {filteredRequests.map((r) => {
+                  const person = personnelMap.get(r.personnelId);
+                  const days = leaveDayCount(r.startDate, r.endDate);
+
+                  return (
+                    <MobileCard
+                      key={r.id}
+                      leading={
+                        <Avatar
+                          name={person?.name || "Bilinmeyen"}
+                          url={person?.avatarUrl}
+                          className="size-10 shrink-0"
+                        />
+                      }
+                      title={person?.name || "Bilinmeyen Personel"}
+                      subtitle={person?.department || "-"}
+                      badge={<LeaveStatusBadge status={r.status} />}
+                      rows={[
+                        {
+                          label: "İzin Türü",
+                          value: (
+                            <span className="inline-flex items-center gap-2">
+                              <span className="font-medium text-primary">
+                                {leaveTypeLabels[r.type]}
+                              </span>
+                              {r.attachmentUrl && (
+                                <AttachmentDialog
+                                  url={r.attachmentUrl}
+                                  name={r.attachmentName}
+                                  label={attachmentConfig[r.type]?.label}
+                                >
+                                  <span className="inline-flex items-center rounded-md border border-accent-cyan/30 bg-accent-cyan/10 px-2 py-0.5 text-[10px] font-bold text-accent-cyan">
+                                    {attachmentConfig[r.type]?.buttonLabel ?? "Belge"}
+                                  </span>
+                                </AttachmentDialog>
+                              )}
+                            </span>
+                          ),
+                        },
+                        {
+                          label: "Tarih",
+                          value: (
+                            <span className="font-mono text-xs">
+                              {new Date(r.startDate).toLocaleDateString("tr-TR")} –{" "}
+                              {new Date(r.endDate).toLocaleDateString("tr-TR")}
+                            </span>
+                          ),
+                        },
+                        {
+                          label: "Süre",
+                          value: (
+                            <span className="font-mono text-xs font-bold text-primary">
+                              {days} Gün
+                            </span>
+                          ),
+                        },
+                      ]}
+                      actions={
+                        isAdmin ? (
+                          <>
+                            {r.status === "pending" && (
+                              <>
+                                <button
+                                  onClick={() => {
+                                    setLeaveStatus(r.id, "approved");
+                                    toast.success("Talep onaylandı");
+                                  }}
+                                  title="Onayla"
+                                  className="flex size-9 items-center justify-center rounded-md border border-green-600/30 bg-green-500/10 text-green-700 active:scale-95"
+                                >
+                                  <Check className="size-4" />
+                                </button>
+                                <button
+                                  onClick={() => setToReject(r)}
+                                  title="Reddet"
+                                  className="flex size-9 items-center justify-center rounded-md border border-red-600/30 bg-red-500/10 text-red-700 active:scale-95"
+                                >
+                                  <X className="size-4" />
+                                </button>
+                              </>
+                            )}
+                            <button
+                              onClick={() => {
+                                setEditing(r);
+                                setDialogOpen(true);
+                              }}
+                              title="Düzenle"
+                              className="flex size-9 items-center justify-center rounded-md border border-outline-variant/30 text-on-surface-variant active:scale-95"
+                            >
+                              <CalendarClock className="size-4" />
+                            </button>
+                            <button
+                              onClick={() => setToDelete(r)}
+                              title="Sil"
+                              className="flex size-9 items-center justify-center rounded-md border border-destructive/30 bg-destructive/5 text-destructive active:scale-95"
+                            >
+                              <Trash2 className="size-4" />
+                            </button>
+                          </>
+                        ) : undefined
+                      }
+                    />
+                  );
+                })}
+              </MobileCardList>
+
+              {/* Masaüstü: tablo */}
+              <div className="glass-panel hidden overflow-hidden rounded-xl md:block">
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[800px] text-left border-collapse">
                     <thead>
@@ -382,6 +494,7 @@ export default function LeaveRequestsPage() {
                   </table>
                 </div>
               </div>
+              </>
             )}
           </div>
         )}

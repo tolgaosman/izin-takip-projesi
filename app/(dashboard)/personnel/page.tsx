@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Pencil, Eye, Search, ShieldAlert } from "lucide-react";
+import { Plus, Trash2, Pencil, Eye, Search } from "lucide-react";
 import { usePersonnel } from "@/lib/data/store";
 import { useIsAdmin } from "@/components/auth/role-store";
 import { Personnel, personnelStatusLabels } from "@/lib/data/types";
@@ -11,6 +11,7 @@ import { deletePersonnel } from "@/lib/data/store";
 import { ConfirmDialog } from "@/components/dashboard/confirm-dialog";
 import { PersonnelDialog } from "@/components/dashboard/personnel-dialog";
 import { ExportButton } from "@/components/dashboard/export-button";
+import { MobileCard, MobileCardList } from "@/components/dashboard/mobile-card-list";
 import { useToast } from "@/components/ui/toast";
 import Link from "next/link";
 
@@ -48,17 +49,18 @@ export default function PersonnelPage() {
     <>
       <div className="space-y-8">
         {/* Sayfa Başlığı ve Ekleme Butonu */}
-        <div className="flex flex-wrap items-end justify-between gap-4 border-b border-outline-variant/20 pb-6">
+        <div className="flex flex-col items-stretch gap-4 border-b border-outline-variant/20 pb-6 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
           <div>
-            <h2 className="font-serif text-5xl font-bold text-primary">
+            <h2 className="font-serif text-3xl font-bold text-primary sm:text-4xl lg:text-5xl">
               Personel Listesi
             </h2>
-            <p className="font-sans text-base text-on-surface-variant mt-2">
+            <p className="font-sans text-sm text-on-surface-variant mt-2 md:text-base">
               Tüm şirket personelinin detayları, departmanları ve güncel çalışma durumları.
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex w-full items-center gap-2 sm:w-auto sm:gap-3">
             <ExportButton
+              className="flex-1 justify-center sm:flex-none"
               filename="personel-listesi"
               rows={filteredPersonnel}
               columns={[
@@ -76,7 +78,7 @@ export default function PersonnelPage() {
                   setEditing(null);
                   setDialogOpen(true);
                 }}
-                className="flex items-center gap-2 rounded-lg bg-accent-cyan px-4 py-2 text-base font-bold text-white dark:text-black shadow transition-all hover:opacity-90 active:scale-95 cursor-pointer"
+                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-accent-cyan px-4 py-2 text-base font-bold text-white dark:text-black shadow transition-all hover:opacity-90 active:scale-95 cursor-pointer sm:flex-none"
               >
                 <Plus className="size-5" />
                 <span>Yeni Personel</span>
@@ -86,7 +88,7 @@ export default function PersonnelPage() {
         </div>
 
         {personnel.length === 0 ? (
-          <div className="flex min-h-[300px] flex-col items-center justify-center text-center p-12 glass-panel rounded-xl my-6">
+          <div className="flex min-h-[200px] flex-col items-center justify-center text-center p-6 glass-panel rounded-xl my-6 md:min-h-[300px] md:p-12">
             <p className="font-sans text-lg text-on-surface-variant max-w-md">
               Sistemde henüz personel kaydı bulunamadı. Listeyi oluşturmak için sağ üstteki &quot;Yeni Personel&quot; butonuna tıklayınız.
             </p>
@@ -108,13 +110,75 @@ export default function PersonnelPage() {
             </div>
 
             {filteredPersonnel.length === 0 ? (
-              <div className="flex min-h-[200px] flex-col items-center justify-center text-center p-8 glass-panel rounded-xl">
+              <div className="flex min-h-[160px] flex-col items-center justify-center text-center p-5 glass-panel rounded-xl md:min-h-[200px] md:p-8">
                 <p className="font-sans text-base text-on-surface-variant">
                   Arama kriterlerinize uygun personel bulunamadı.
                 </p>
               </div>
             ) : (
-              <div className="glass-panel overflow-hidden rounded-xl">
+              <>
+              {/* Mobil: kart listesi */}
+              <MobileCardList>
+                {filteredPersonnel.map((p) => (
+                  <MobileCard
+                    key={p.id}
+                    leading={<Avatar name={p.name} url={p.avatarUrl} className="size-10 shrink-0" />}
+                    title={p.name}
+                    subtitle={p.department}
+                    badge={
+                      <span className="inline-block rounded-full border border-outline-variant/30 bg-white/50 px-3 py-1 font-mono text-xs font-semibold text-secondary">
+                        {personnelStatusLabels[p.status]}
+                      </span>
+                    }
+                    rows={[
+                      { label: "Telefon", value: <span className="font-mono text-xs">{p.phone}</span> },
+                      {
+                        label: "Başlangıç",
+                        value: (
+                          <span className="font-mono text-xs">
+                            {p.startDate ? new Date(p.startDate).toLocaleDateString("tr-TR") : "-"}
+                          </span>
+                        ),
+                      },
+                    ]}
+                    actions={
+                      <>
+                        <Link
+                          href={`/personnel/detail?id=${p.id}`}
+                          className="flex size-9 items-center justify-center rounded-lg border border-outline-variant/30 text-on-surface-variant transition-colors active:scale-95"
+                          title="Detay"
+                        >
+                          <Eye className="size-4" />
+                        </Link>
+                        {isAdmin && (
+                          <>
+                            <button
+                              onClick={() => {
+                                setEditing(p);
+                                setDialogOpen(true);
+                              }}
+                              className="flex size-9 items-center justify-center rounded-lg border border-outline-variant/30 text-on-surface-variant transition-colors active:scale-95"
+                              title="Düzenle"
+                            >
+                              <Pencil className="size-4" />
+                            </button>
+                            <button
+                              onClick={() => setToDelete(p)}
+                              className="flex size-9 items-center justify-center rounded-lg border border-outline-variant/30 text-destructive transition-colors active:scale-95"
+                              title="Sil"
+                            >
+                              <Trash2 className="size-4" />
+                            </button>
+                          </>
+                        )}
+                      </>
+                    }
+                  />
+                ))}
+              </MobileCardList>
+
+              {/* Masaüstü: tablo */}
+              <div className="glass-panel hidden overflow-hidden rounded-xl md:block">
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[800px] text-left border-collapse">
                     <thead>
@@ -203,6 +267,7 @@ export default function PersonnelPage() {
                   </table>
                 </div>
               </div>
+              </>
             )}
           </div>
         )}
