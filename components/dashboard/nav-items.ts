@@ -14,9 +14,10 @@ export type NavItem = {
   adminOnly?: boolean;
 };
 
-/** Bir nav öğesinin geçerli rotada aktif olup olmadığı (Sidebar + MobileNav ortak). */
 export function isNavItemActive(pathname: string, href: string) {
-  return href === "/" ? pathname === "/" : pathname.startsWith(href);
+  const normPath = pathname.endsWith("/") && pathname.length > 1 ? pathname.slice(0, -1) : pathname;
+  const normHref = href.endsWith("/") && href.length > 1 ? href.slice(0, -1) : href;
+  return normHref === "/" ? normPath === "/" || normPath === "" : normPath.startsWith(normHref);
 }
 
 export const navItems: NavItem[] = [

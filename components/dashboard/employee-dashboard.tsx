@@ -58,11 +58,7 @@ function UpcomingHolidays() {
   const items = useMemo(
     () =>
       publicHolidays2026
-        .filter((h) => {
-          if (h.date < today) return false;
-          const d = parseLocalDate(h.date).getDay();
-          return d !== 0 && d !== 6; // Yalnızca hafta içi olanları göster
-        })
+        .filter((h) => h.date >= today)
         .sort((a, b) => a.date.localeCompare(b.date))
         .slice(0, 5),
     [today]

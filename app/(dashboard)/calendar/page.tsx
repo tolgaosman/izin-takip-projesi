@@ -11,6 +11,8 @@ import {
   type CalendarDayEntry,
 } from "@/components/dashboard/calendar-day-dialog";
 
+import { getPublicHolidayName } from "@/lib/date/holidays";
+
 export default function CalendarPage() {
   const requests = useLeaveRequests();
   const personnel = usePersonnel();
@@ -43,7 +45,6 @@ export default function CalendarPage() {
   }, [personnel]);
 
   // Takvimde gösterilecek izinler: onaylı + bekleyen (reddedilenler hariç).
-  // Bekleyenler farklı stille gösterilir, böylece yeni talep anında görünür.
   const visibleLeaves = useMemo(
     () => requests.filter((r) => r.status === "approved" || r.status === "pending"),
     [requests]
@@ -64,8 +65,56 @@ export default function CalendarPage() {
       const dayStr = String(day).padStart(2, "0");
       const currentIso = `${year}-${month}-${dayStr}`;
 
-      // O gün izinde olanları bul (personeli çözümlenmiş olarak); onaylılar
-      // önce gelsin ki çipler tutarlı sıralansın.
+      const dateObj = new Date(year, currentDate.getMonth(), day);
+      const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
+      const holidayName = getPublicHolidayName(currentIso);
+
+      // 1) Resmî Tatil veya Özel Gün (Hafta içi veya Hafta sonu) → Tatil adı gösterilir (İnsan adı yazılmaz)
+      if (holidayName) {
+        cells.push(
+          <div
+            key={day}
+            className={`min-h-[56px] rounded-lg border p-1 text-left sm:min-h-[96px] sm:rounded-xl sm:p-2 lg:min-h-[120px] ${
+              isWeekend
+                ? "border-amber-500/25 bg-amber-500/5"
+                : "border-amber-500/30 bg-amber-500/10"
+            }`}
+          >
+            <div className="flex items-center justify-between font-mono text-xs font-bold text-amber-800 dark:text-amber-300 sm:text-sm">
+              <span>{day}</span>
+              <span className="inline-flex rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-bold text-amber-800 dark:text-amber-200 sm:hidden">
+                Tatil
+              </span>
+            </div>
+            <div className="mt-1.5">
+              <div
+                className="truncate rounded-md border border-amber-500/30 bg-amber-500/15 px-2 py-1 font-sans text-xs font-bold text-amber-900 dark:text-amber-200 shadow-sm"
+                title={`Özel Gün / Resmî Tatil: ${holidayName}`}
+              >
+                🚩 {holidayName}
+              </div>
+            </div>
+          </div>
+        );
+        continue;
+      }
+
+      // 2) Normal Hafta sonu (Cumartesi / Pazar) → İÇİ TAMAMEN BOŞ
+      if (isWeekend) {
+        cells.push(
+          <div
+            key={day}
+            className="min-h-[56px] rounded-lg border border-outline-variant/15 bg-surface-2/40 p-1 text-left opacity-60 sm:min-h-[96px] sm:rounded-xl sm:p-2 lg:min-h-[120px]"
+          >
+            <div className="font-mono text-xs font-bold text-on-surface-variant/40 sm:text-sm">
+              <span>{day}</span>
+            </div>
+          </div>
+        );
+        continue;
+      }
+
+      // 3) Normal Hafta içi günü → O gün izinde olan personeller listelenir
       const entries: CalendarDayEntry[] = visibleLeaves
         .filter((r) => currentIso >= r.startDate && currentIso <= r.endDate)
         .map((leave) => {
@@ -77,16 +126,10 @@ export default function CalendarPage() {
 
       const hasLeave = entries.length > 0;
 
-      // Haftasonu kontrolü
-      const dateObj = new Date(year, currentDate.getMonth(), day);
-      const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
-
       const cellContent = (
         <>
-          <div className={`flex items-center justify-between gap-1 font-mono text-xs font-bold sm:text-sm ${isWeekend ? "text-on-surface-variant/50" : "text-primary"}`}>
+          <div className="flex items-center justify-between gap-1 font-mono text-xs font-bold text-primary sm:text-sm">
             <span>{day}</span>
-            {/* Mobilde isim çipleri sığmadığı için yalnızca sayı rozeti gösterilir;
-                detay hücreye dokununca CalendarDayDialog'da açılır. */}
             {hasLeave && (
               <span className="inline-flex size-4 items-center justify-center rounded-full bg-accent-cyan/15 text-[10px] font-bold text-accent-cyan sm:hidden">
                 {entries.length}
@@ -130,7 +173,7 @@ export default function CalendarPage() {
         ) : (
           <div
             key={day}
-            className={`${baseCell} border-outline-variant/20 ${isWeekend ? "bg-surface-2" : "bg-surface-1"}`}
+            className={`${baseCell} border-outline-variant/20 bg-surface-1`}
           >
             {cellContent}
           </div>

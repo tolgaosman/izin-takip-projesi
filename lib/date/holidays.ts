@@ -40,3 +40,20 @@ export const publicHolidays2026: PublicHoliday[] = [
 export const holidaySet2026: Set<string> = new Set(
   publicHolidays2026.map((h) => h.date)
 );
+
+export function getPublicHolidayName(isoDate: string): string | undefined {
+  const match = publicHolidays2026.find((h) => h.date === isoDate);
+  if (match) return match.name;
+
+  const monthDay = isoDate.slice(5);
+  const fixedMap: Record<string, string> = {
+    "01-01": "Yılbaşı",
+    "04-23": "Ulusal Egemenlik ve Çocuk Bayramı",
+    "05-01": "Emek ve Dayanışma Günü",
+    "05-19": "Atatürk'ü Anma, Gençlik ve Spor Bayramı",
+    "07-20": "Barış ve Özgürlük Bayramı",
+    "08-30": "Zafer Bayramı",
+    "10-29": "Cumhuriyet Bayramı",
+  };
+  return fixedMap[monthDay];
+}
