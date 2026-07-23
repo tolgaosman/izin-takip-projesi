@@ -25,11 +25,11 @@ export function RoleSwitcher() {
     <Menu.Root>
       <Menu.Trigger
         aria-label="Rol seç"
-        className="flex items-center gap-2 rounded-full border border-outline-variant/30 bg-surface-1 px-3 py-1.5 text-sm font-medium text-on-surface-variant outline-none transition-colors hover:text-primary data-[popup-open]:border-accent-cyan/40 data-[popup-open]:text-primary cursor-pointer"
+        className="flex items-center gap-1.5 rounded-full border border-outline-variant/30 bg-surface-1 px-2.5 py-1 text-xs font-medium text-on-surface-variant outline-none transition-colors hover:text-primary data-[popup-open]:border-accent-cyan/40 data-[popup-open]:text-primary cursor-pointer sm:gap-2 sm:px-3 sm:py-1.5 sm:text-sm"
       >
-        <ActiveIcon className="size-4" />
+        <ActiveIcon className="size-3.5 sm:size-4" />
         <span>{active.label}</span>
-        <ChevronDown className="size-3.5 opacity-60" />
+        <ChevronDown className="size-3 opacity-60 sm:size-3.5" />
       </Menu.Trigger>
 
       <Menu.Portal>

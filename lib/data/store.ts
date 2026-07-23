@@ -32,7 +32,7 @@ function readKey<T>(key: string, fallback: T): T {
   return fallback;
 }
 
-const STORE_VERSION_KEY = "izin-takip-version-v2";
+const STORE_VERSION_KEY = "izin-takip-version-v5";
 
 function getLocalTodayIso(): string {
   const t = new Date();
@@ -78,12 +78,12 @@ function ensureInit() {
 
   try {
     const version = window.localStorage.getItem(STORE_VERSION_KEY);
-    if (version !== "v2") {
+    if (version !== "v5") {
       personnel = seedPersonnel;
       leaves = seedLeaveRequests;
       persist(PERSONNEL_KEY, personnel);
       persist(LEAVES_KEY, leaves);
-      window.localStorage.setItem(STORE_VERSION_KEY, "v2");
+      window.localStorage.setItem(STORE_VERSION_KEY, "v5");
     } else {
       personnel = readKey(PERSONNEL_KEY, seedPersonnel);
       leaves = readKey(LEAVES_KEY, seedLeaveRequests);

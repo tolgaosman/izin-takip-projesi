@@ -25,10 +25,10 @@ export function UserMenu() {
         className="rounded-full outline-none transition-transform active:scale-95 data-[popup-open]:ring-2 data-[popup-open]:ring-accent-cyan/50"
       >
         {user && isAdmin ? (
-          <Avatar name={user.name} url={user.avatarUrl} className="size-10 border border-accent-cyan/30" />
+          <Avatar name={user.name} url={user.avatarUrl} className="size-8 sm:size-9 md:size-10 border border-accent-cyan/30" />
         ) : (
-          <span className="flex size-10 items-center justify-center rounded-full text-on-surface-variant transition-colors hover:bg-black/5 hover:text-primary data-[popup-open]:bg-black/5 data-[popup-open]:text-primary">
-            <User className="size-5" />
+          <span className="flex size-8 sm:size-9 md:size-10 items-center justify-center rounded-full text-on-surface-variant transition-colors hover:bg-black/5 hover:text-primary data-[popup-open]:bg-black/5 data-[popup-open]:text-primary">
+            <User className="size-4 sm:size-5" />
           </span>
         )}
       </Menu.Trigger>
